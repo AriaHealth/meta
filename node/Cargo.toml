@@ -1,17 +1,17 @@
 [package]
-name = 'node-template'
-version = '3.0.0-monthly-2021-10'
-description = 'A fresh FRAME-based Substrate node, ready for hacking.'
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
-homepage = 'https://substrate.dev'
+name = 'meta'
+version = '0.0.0'
+description = 'Aria Meta Network Node'
+authors = ['Aria Health <https://github.com/AriaHealth>']
+homepage = 'https://myaria.health'
 edition = '2018'
 license = 'Unlicense'
 publish = false
-repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+repository = 'https://github.com/AriaHealth/meta'
 build = 'build.rs'
 
 [[bin]]
-name = 'node-template'
+name = 'meta'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -21,9 +21,9 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-10'
 version = '3.0.0'
 
-[dependencies.node-template-runtime]
+[dependencies.meta-runtime]
 path = '../runtime'
-version = '3.0.0-monthly-2021-10'
+version = '0.0.0'
 
 [dependencies]
 jsonrpc-core = '18.0.0'
@@ -174,4 +174,4 @@ version = '4.0.0-dev'
 
 [features]
 default = []
-runtime-benchmarks = ['node-template-runtime/runtime-benchmarks']
+runtime-benchmarks = ['meta-runtime/runtime-benchmarks']

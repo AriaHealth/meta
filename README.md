@@ -1,6 +1,6 @@
 # Substrate Off-chain Worker Demo
 
-This repository is built based on [Substrate Node Template `v3.0.0+monthly-2021-10`](https://github.com/substrate-developer-hub/substrate-node-template/tree/v3.0.0+monthly-2021-10).
+This repository is built based on [Substrate Node Template `v3.0.0+monthly-2021-10`](https://github.com/substrate-developer-hub/substrate-meta/tree/v3.0.0+monthly-2021-10).
 
 The purpose is to demonstrate what off-chain worker could do, and how one would go about using it.
 
@@ -22,7 +22,7 @@ build the node without launching it:
   ```
 
 Since this repository is based on Substrate Node Template,
-[it's README](https://github.com/substrate-developer-hub/substrate-node-template/blob/v3.0.0%2Bmonthly-2021-10/README.md)
+[it's README](https://github.com/substrate-developer-hub/substrate-meta/blob/v3.0.0%2Bmonthly-2021-10/README.md)
 applies to this repository as well.
 
 ### About Off-chain Worker
