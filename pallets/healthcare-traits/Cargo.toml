@@ -1,0 +1,63 @@
+[package]
+name = "healthcare-traits"
+version = '0.0.0'
+description = 'Healthcare traits'
+authors = ['Aria Health <https://github.com/AriaHealth>']
+homepage = 'https://myaria.health'
+edition = '2018'
+license = 'Unlicense'
+publish = false
+repository = 'https://github.com/AriaHealth/meta'
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '2.0.0'
+
+[dependencies.scale-info]
+default-features = false
+features = ['derive']
+version = '1.0'
+
+[dependencies.sp-runtime]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-10'
+version = '4.0.0-dev'
+
+[dev-dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-10'
+version = '4.0.0-dev'
+
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-10'
+version = '4.0.0-dev'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-10'
+version = '4.0.0-dev'
+
+[dependencies.serde]
+version = '1.0.130'
+default-features = false
+features = ['derive']
+optional = true
+
+[features]
+default = ["std"]
+std = [
+  "serde",
+  "codec/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-io/std",
+  "sp-std/std",
+  "frame-support/std",
+]
