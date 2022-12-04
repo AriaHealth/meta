@@ -45,7 +45,6 @@ pub use pallet_delivery_network;
 pub use pallet_marketplace;
 pub use pallet_meta_registry;
 pub use pallet_public_key_registry;
-/// Import Aria pallets
 pub use pallet_user_connection;
 
 /// Delete later
@@ -285,7 +284,6 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
-
 /// Aria pallets configuration
 impl pallet_user_connection::Config for Runtime {
     type Event = Event;
@@ -299,7 +297,7 @@ impl pallet_marketplace::Config for Runtime {
     type Event = Event;
 }
 
-impl pallet_meta_registry ::Config for Runtime{
+impl pallet_meta_registry::Config for Runtime {
     type Event = Event;
 }
 
@@ -411,11 +409,11 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-				UserConnection: pallet_user_connection::{Pallet,Event<T>},
-				DeliveryNetwork: pallet_delivery_network::{Pallet,Event<T>},
-				MetaRegistry: pallet_meta_registry::{Pallet,Event<T>},
-				PublicKeyRegistry: pallet_public_key_registry::{Pallet,Event<T>},
-				Marketplace: pallet_marketplace::{Pallet,Event<T>},
+        UserConnection: pallet_user_connection::{Pallet,Event<T>},
+        DeliveryNetwork: pallet_delivery_network::{Pallet,Event<T>},
+        MetaRegistry: pallet_meta_registry::{Pallet,Event<T>},
+        PublicKeyRegistry: pallet_public_key_registry::{Pallet,Event<T>},
+        Marketplace: pallet_marketplace::{Pallet,Event<T>},
         TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
         OcwDemo: pallet_ocw::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
         OcwExample: pallet_example_offchain_worker::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},

@@ -115,6 +115,7 @@ default-features = false
 version = '0.0.0'
 path = '../pallets/public-key-registry'
 
+
 # DELETE LATER
 [dependencies.pallet-example-offchain-worker]
 default-features = false
@@ -126,6 +127,7 @@ path = '../pallets/x-template-ocw-1'
 default-features = false
 version = '1.0.0'
 path = '../pallets/x-template-ocw'
+
 
 [dependencies.pallet-randomness-collective-flip]
 default-features = false

@@ -1958,9 +1958,7 @@ dependencies = [
  "frame-support",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-io",
- "sp-runtime",
  "sp-std",
 ]
 
@@ -4058,11 +4056,13 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "healthcare-traits",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
