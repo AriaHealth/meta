@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
+mod constants;
 mod enums;
 
 #[cfg(test)]
@@ -14,8 +15,12 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
+    use crate::constants::GROUP_INFO_MAX_LEN;
     use crate::enums::Relation;
     use frame_support::pallet_prelude::*;
+
+    pub type GroupInfo = BoundedVec<u8, ConstU32<GROUP_INFO_MAX_LEN>>;
+    pub type GroupId = [u8; 32];
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -39,8 +44,15 @@ pub mod pallet {
         Relation,
     >;
 
-    // Pallets use events to inform users when important changes are made.
-    // https://substrate.dev/docs/en/knowledgebase/runtime/events
+    #[pallet::storage]
+    #[pallet::getter(fn groups)]
+    pub type Groups<T: Config> = StorageMap<_, Blake2_128Concat, GroupId, GroupInfo>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn group_admins)]
+    pub type GroupAdmins<T: Config> =
+        StorageDoubleMap<_, Blake2_128Concat, GroupId, Blake2_128Concat, T::AccountId, bool>;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
