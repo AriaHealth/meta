@@ -2,11 +2,11 @@
 
 pub use pallet::*;
 mod constants;
-mod enums;
 mod impls;
 #[cfg(test)]
 mod mock;
 mod traits;
+mod types;
 
 #[cfg(test)]
 mod tests;
@@ -16,15 +16,18 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use crate::enums::Relation;
-    use crate::traits::{ConnectionRuler, GroupId, GroupInfo};
+    use crate::traits::ConnectionRuler;
+    use crate::types::{GroupId, GroupInfo, Relation};
     use frame_support::pallet_prelude::*;
-
+    use frame_support::traits::Get;
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        #[pallet::constant]
+        type RemovalLimit: Get<u32>;
 
         type ConnectionRuler: ConnectionRuler<Self>;
     }
@@ -46,11 +49,16 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn groups)]
-    pub type Groups<T: Config> = StorageMap<_, Blake2_128Concat, GroupId, GroupInfo>;
+    pub type Groups<T: Config> = StorageMap<_, Blake2_128Concat, GroupId, Option<GroupInfo>>;
 
     #[pallet::storage]
     #[pallet::getter(fn group_admins)]
     pub type GroupAdmins<T: Config> =
+        StorageDoubleMap<_, Blake2_128Concat, GroupId, Blake2_128Concat, T::AccountId, bool>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn group_members)]
+    pub type GroupMembers<T: Config> =
         StorageDoubleMap<_, Blake2_128Concat, GroupId, Blake2_128Concat, T::AccountId, bool>;
 
     #[pallet::event]

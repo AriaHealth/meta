@@ -4,8 +4,7 @@ use crate::Config;
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::pallet_prelude::*;
 
-pub type GroupInfo = BoundedVec<u8, ConstU32<GROUP_INFO_MAX_LEN>>;
-pub type GroupId = [u8; 32];
+
 
 pub trait ConnectionRuler<T: Config> {
     /// Check if `from` can connect to `to`. If `false`,the connection will be rejected.
