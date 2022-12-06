@@ -3,9 +3,10 @@
 pub use pallet::*;
 mod constants;
 mod enums;
-
+mod impls;
 #[cfg(test)]
 mod mock;
+mod traits;
 
 #[cfg(test)]
 mod tests;
@@ -15,18 +16,17 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use crate::constants::GROUP_INFO_MAX_LEN;
     use crate::enums::Relation;
+    use crate::traits::{ConnectionRuler, GroupId, GroupInfo};
     use frame_support::pallet_prelude::*;
-
-    pub type GroupInfo = BoundedVec<u8, ConstU32<GROUP_INFO_MAX_LEN>>;
-    pub type GroupId = [u8; 32];
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type ConnectionRuler: ConnectionRuler<Self>;
     }
 
     #[pallet::pallet]

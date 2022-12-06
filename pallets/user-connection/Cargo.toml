@@ -18,10 +18,10 @@ features = ['derive']
 package = 'parity-scale-codec'
 version = '2.0.0'
 
-[dependencies.healthcare-traits]
+[dependencies.pallet-healthcare]
 version = "0.0.0"
 default-features = false
-path = "../../pallets/healthcare-traits"
+path = "../../pallets/pallet-healthcare"
 
 [dependencies.frame-benchmarking]
 default-features = false

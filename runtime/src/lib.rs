@@ -287,6 +287,7 @@ impl pallet_sudo::Config for Runtime {
 /// Aria pallets configuration
 impl pallet_user_connection::Config for Runtime {
     type Event = Event;
+    type ConnectionRuler = ();
 }
 
 impl pallet_delivery_network::Config for Runtime {

@@ -1952,17 +1952,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "healthcare-traits"
-version = "0.0.0"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-std",
-]
-
-[[package]]
 name = "heck"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3863,6 +3852,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-healthcare"
+version = "0.0.0"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-marketplace"
 version = "0.0.0"
 dependencies = [
@@ -4056,7 +4056,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "healthcare-traits",
+ "pallet-healthcare",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

@@ -1,5 +1,5 @@
 [package]
-name = "healthcare-traits"
+name = "pallet-healthcare"
 version = '0.0.0'
 description = 'Healthcare traits'
 authors = ['Aria Health <https://github.com/AriaHealth>']
