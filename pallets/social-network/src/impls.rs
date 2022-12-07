@@ -1,7 +1,7 @@
-use crate::types::{AccessControl, AccountStatus, GroupInfo, Relation};
-
 use super::pallet::*;
-use frame_support::{ensure, traits::Get};
+use frame_support::ensure;
+
+use crate::types::{AccessControl, AccountStatus, GroupInfo, Relation};
 
 impl<T: Config> Pallet<T> {
     pub fn connect(from: &T::AccountId, to: &T::AccountId) -> Result<(), Error<T>> {
@@ -45,24 +45,25 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub fn create_group(group_admin: &T::AccountId, group_id: &T::GroupId, group_info: &GroupInfo) {
+    pub fn create_group(
+        group_admin: &T::AccountId,
+        group_id: &T::GroupId,
+        group_info: &GroupInfo,
+    ) -> Result<(), Error<T>> {
+        let account = Accounts::<T>::get(group_admin);
+        let group = Groups::<T>::get(group_id);
+
+        ensure!(group.is_none(), Error::<T>::GroupAlreadyExisted);
+        ensure!(account.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(
+            account.unwrap().status == AccountStatus::Live,
+            Error::<T>::AccountNotLive
+        );
+
         Groups::<T>::insert(group_id, Some(group_info));
         GroupMembers::<T>::insert(group_id, group_admin, AccessControl::SuperAdmin);
-    }
 
-    pub fn delete_group(group_id: &T::GroupId) {
-        // None group_info indicates that the group is deleted. If the deletion
-        // reach the removal limit, the group will be deleted next time from the
-        // on_idle hook.
-        let _ = Groups::<T>::try_mutate(group_id, |group_info| {
-            if let Some(group_info) = group_info {
-                *group_info = None;
-                Ok(())
-            } else {
-                Err(())
-            }
-        });
-        GroupMembers::<T>::remove_prefix(group_id, Some(T::RemovalLimit::get()));
+        Ok(())
     }
 
     pub fn join(
@@ -70,6 +71,15 @@ impl<T: Config> Pallet<T> {
         group_id: &T::GroupId,
         access_control: &AccessControl,
     ) -> Result<(), Error<T>> {
+        let account = Accounts::<T>::get(who);
+        let group = Groups::<T>::get(group_id);
+
+        ensure!(group.is_some(), Error::<T>::GroupNotExisted);
+        ensure!(account.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(
+            account.unwrap().status == AccountStatus::Live,
+            Error::<T>::AccountNotLive
+        );
         ensure!(
             [
                 AccessControl::PendingSuperAdmin,
@@ -105,9 +115,11 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn do_join(who: &T::AccountId, group_id: &T::GroupId) -> Result<(), Error<T>> {
-        let access_control = GroupMembers::<T>::get(group_id, who);
+        let member = GroupMembers::<T>::get(group_id, who);
+        let group = Groups::<T>::get(group_id);
 
-        ensure!(access_control.is_some(), Error::<T>::NeverJoining);
+        ensure!(group.is_some(), Error::<T>::GroupNotExisted);
+        ensure!(member.is_some(), Error::<T>::NeverJoining);
         ensure!(
             [
                 AccessControl::PendingSuperAdmin,
@@ -116,11 +128,11 @@ impl<T: Config> Pallet<T> {
                 AccessControl::PendingReadWrite,
                 AccessControl::PendingMember
             ]
-            .contains(&access_control.unwrap()),
+            .contains(&member.unwrap()),
             Error::<T>::AlreadyJoined
         );
 
-        match access_control {
+        match member {
             Some(AccessControl::PendingSuperAdmin) => {
                 GroupMembers::<T>::remove(group_id, who);
                 GroupMembers::<T>::insert(group_id, who, AccessControl::SuperAdmin);
@@ -147,7 +159,21 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub fn disjoin(who: &T::AccountId, group_id: &T::GroupId) {
+    pub fn disjoin(who: &T::AccountId, group_id: &T::GroupId) -> Result<(), Error<T>> {
+        let account = Accounts::<T>::get(who);
+        let group = Groups::<T>::get(group_id);
+        let member = GroupMembers::<T>::get(group_id, who);
+
+        ensure!(group.is_some(), Error::<T>::GroupNotExisted);
+        ensure!(member.is_some(), Error::<T>::NeverJoining);
+        ensure!(account.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(
+            account.unwrap().status == AccountStatus::Live,
+            Error::<T>::AccountNotLive
+        );
+
         GroupMembers::<T>::remove(group_id, who);
+
+        Ok(())
     }
 }

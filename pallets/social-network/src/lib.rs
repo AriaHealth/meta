@@ -49,7 +49,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn accounts)]
     pub type Accounts<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, AccountDetail<T::GroupId, T::AccountId>>;
+        StorageMap<_, Blake2_128Concat, T::AccountId, AccountDetail<T::AccountId>>;
 
     #[pallet::storage]
     #[pallet::getter(fn connections)]
@@ -75,11 +75,15 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         OnlyPendingAllowed,
+        AlreadyJoined,
         AlreadyJoining,
+        AlreadyConnected,
         AlreadyConnecting,
         AccountNotLive,
         AccountNotExisted,
         NeverConnecting,
         NeverJoining,
+        GroupAlreadyExisted,
+        GroupNotExisted,
     }
 }

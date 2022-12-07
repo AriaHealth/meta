@@ -37,21 +37,15 @@ pub enum AccountStatus {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub struct AccountDetail<GroupId, AccountId> {
+pub struct AccountDetail<AccountId> {
     /// Who first allow this account to join the network
     pub issuer: AccountId,
 
     /// Who freeze this user
-    pub freezer: AccountId,
+    pub freezer: Option<AccountId>,
 
     /// The status of this account to do activity in the network
     pub status: AccountStatus,
-
-    /// The groups that this account is an admin of
-    pub admin_of: BoundedVec<GroupId, ConstU32<MAX_ADMINSHIP>>,
-
-    /// The groups that this account is a member of
-    pub member_of: BoundedVec<GroupId, ConstU32<MAX_MEMBERSHIP>>,
 
     /// The externally stored account information
     pub info: AccountInfo,
