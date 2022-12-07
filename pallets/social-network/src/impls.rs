@@ -1,19 +1,48 @@
-use crate::types::{AccessControl, GroupInfo, Relation};
+use crate::types::{AccessControl, AccountStatus, GroupInfo, Relation};
 
 use super::pallet::*;
 use frame_support::{ensure, traits::Get};
 
 impl<T: Config> Pallet<T> {
-    pub fn connect(from: &T::AccountId, to: &T::AccountId) {
-        Connections::<T>::insert(to, from, Relation::Pending);
+    pub fn connect(from: &T::AccountId, to: &T::AccountId) -> Result<(), Error<T>> {
+        let account = Accounts::<T>::get(to);
+        let connection = Connections::<T>::get(from, to);
+
+        ensure!(account.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(
+            account.unwrap().status == AccountStatus::Live,
+            Error::<T>::AccountNotLive
+        );
+        ensure!(connection.is_none(), Error::<T>::AlreadyConnecting);
+
+        Connections::<T>::insert(from, to, Relation::Pending);
+
+        Ok(())
     }
 
-    pub fn do_connect(from: &T::AccountId, to: &T::AccountId) {
-        Connections::<T>::insert(to, from, Relation::Connected);
+    pub fn do_connect(from: &T::AccountId, to: &T::AccountId) -> Result<(), Error<T>> {
+        let connection = Connections::<T>::get(from, to);
+
+        ensure!(connection.is_some(), Error::<T>::NeverConnecting);
+        ensure!(
+            connection.unwrap() == Relation::Pending,
+            Error::<T>::OnlyPendingAllowed
+        );
+
+        Connections::<T>::remove(from, to);
+        Connections::<T>::insert(from, to, Relation::Connected);
+
+        Ok(())
     }
 
-    pub fn disconnect(from: &T::AccountId, to: &T::AccountId) {
-        Connections::<T>::remove(to, from);
+    pub fn disconnect(from: &T::AccountId, to: &T::AccountId) -> Result<(), Error<T>> {
+        let connection = Connections::<T>::get(from, to);
+
+        ensure!(connection.is_some(), Error::<T>::NeverConnecting);
+
+        Connections::<T>::remove(from, to);
+
+        Ok(())
     }
 
     pub fn create_group(group_admin: &T::AccountId, group_id: &T::GroupId, group_info: &GroupInfo) {
@@ -88,7 +117,7 @@ impl<T: Config> Pallet<T> {
                 AccessControl::PendingMember
             ]
             .contains(&access_control.unwrap()),
-            Error::<T>::AlreadyMember
+            Error::<T>::AlreadyJoined
         );
 
         match access_control {

@@ -75,7 +75,11 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         OnlyPendingAllowed,
-        AlreadyMember,
+        AlreadyJoining,
+        AlreadyConnecting,
+        AccountNotLive,
+        AccountNotExisted,
+        NeverConnecting,
         NeverJoining,
     }
 }
