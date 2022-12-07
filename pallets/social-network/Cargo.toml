@@ -1,5 +1,5 @@
 [package]
-name = 'pallet-user-connection'
+name = 'pallet-social-network'
 version = '0.0.0'
 description = 'FRAME pallet template for defining custom runtime logic.'
 authors = ['Aria Health <https://github.com/AriaHealth>']

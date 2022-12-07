@@ -90,10 +90,10 @@ tag = 'monthly-2021-10'
 version = '4.0.0-dev'
 
 # Aria Pallets
-[dependencies.pallet-user-connection]
+[dependencies.pallet-social-network]
 default-features = false
 version = '0.0.0'
-path = '../pallets/user-connection'
+path = '../pallets/social-network'
 
 [dependencies.pallet-delivery-network]
 default-features = false

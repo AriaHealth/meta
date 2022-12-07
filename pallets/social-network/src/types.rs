@@ -9,8 +9,21 @@ pub type GroupInfo = BoundedVec<u8, ConstU32<GROUP_INFO_MAX_LEN>>;
 pub type GroupId = [u8; 32];
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo, MaxEncodedLen, Copy)]
+pub enum AccessControl {
+    SuperAdmin,
+    Admin,
+    ReadOnly,
+    ReadWrite,
+    Member,
+    PendingSuperAdmin,
+    PendingAdmin,
+    PendingReadOnly,
+    PendingReadWrite,
+    PendingMember,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo, MaxEncodedLen, Copy)]
 pub enum Relation {
-    ConnectedInclusive,
-    ConnectedExclusive,
-    Blocked,
+    Pending,
+    Connected,
 }

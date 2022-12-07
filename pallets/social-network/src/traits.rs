@@ -1,10 +1,6 @@
-use crate::constants::GROUP_INFO_MAX_LEN;
 use crate::Config;
 
 use frame_support::dispatch::DispatchResultWithPostInfo;
-use frame_support::pallet_prelude::*;
-
-
 
 pub trait ConnectionRuler<T: Config> {
     /// Check if `from` can connect to `to`. If `false`,the connection will be rejected.

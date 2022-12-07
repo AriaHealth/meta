@@ -45,7 +45,7 @@ pub use pallet_delivery_network;
 pub use pallet_marketplace;
 pub use pallet_meta_registry;
 pub use pallet_public_key_registry;
-pub use pallet_user_connection;
+pub use pallet_social_network;
 
 /// Delete later
 pub use pallet_example_offchain_worker;
@@ -284,12 +284,12 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
-/// Aria pallets configuration
+// Aria pallets configuration
 parameter_types! {
     pub const RemovalLimit: u32 = 100;
 }
 
-impl pallet_user_connection::Config for Runtime {
+impl pallet_social_network::Config for Runtime {
     type Event = Event;
     type RemovalLimit = RemovalLimit;
     type ConnectionRuler = ();
@@ -415,7 +415,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        UserConnection: pallet_user_connection::{Pallet,Event<T>},
+        UserConnection: pallet_social_network::{Pallet,Event<T>},
         DeliveryNetwork: pallet_delivery_network::{Pallet,Event<T>},
         MetaRegistry: pallet_meta_registry::{Pallet,Event<T>},
         PublicKeyRegistry: pallet_public_key_registry::{Pallet,Event<T>},

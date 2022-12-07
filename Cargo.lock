@@ -3336,12 +3336,12 @@ dependencies = [
  "pallet-ocw",
  "pallet-public-key-registry",
  "pallet-randomness-collective-flip",
+ "pallet-social-network",
  "pallet-sudo",
  "pallet-template",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-user-connection",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -3959,6 +3959,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-social-network"
+version = "0.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-healthcare",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?tag=monthly-2021-10#bf9683eee40f82cc4e01a05cd375b0e8bba3c8ef"
@@ -4047,22 +4063,6 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
-]
-
-[[package]]
-name = "pallet-user-connection"
-version = "0.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-healthcare",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
