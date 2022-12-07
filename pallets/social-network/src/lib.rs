@@ -19,7 +19,7 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
     use crate::traits::ConnectionRuler;
-    use crate::types::{AccessControl, GroupId, GroupInfo, Relation};
+    use crate::types::{AccessControl, GroupInfo, Relation};
 
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Get;
@@ -27,7 +27,13 @@ pub mod pallet {
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Because this pallet emits events, it depends on the runtime's definition of an event.
+        type GroupId: Member + Parameter + Copy + MaybeSerializeDeserialize + MaxEncodedLen;
+        type GroupIdParameter: Parameter
+            + Copy
+            + From<Self::GroupId>
+            + Into<Self::GroupId>
+            + MaxEncodedLen;
+
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         #[pallet::constant]
@@ -47,12 +53,12 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn groups)]
-    pub type Groups<T: Config> = StorageMap<_, Twox64Concat, GroupId, Option<GroupInfo>>;
+    pub type Groups<T: Config> = StorageMap<_, Twox64Concat, T::GroupId, Option<GroupInfo>>;
 
     #[pallet::storage]
     #[pallet::getter(fn group_members)]
     pub type GroupMembers<T: Config> =
-        StorageDoubleMap<_, Twox64Concat, GroupId, Twox64Concat, T::AccountId, AccessControl>;
+        StorageDoubleMap<_, Twox64Concat, T::GroupId, Twox64Concat, T::AccountId, AccessControl>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]

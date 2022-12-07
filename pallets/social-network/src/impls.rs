@@ -1,23 +1,27 @@
-use crate::types::{AccessControl, GroupId, GroupInfo, Relation};
+use crate::types::{AccessControl, GroupInfo, Relation};
 
 use super::pallet::*;
 use frame_support::{ensure, traits::Get};
 
 impl<T: Config> Pallet<T> {
-    pub fn connect(from: &T::AccountId, to: &T::AccountId, relation: Relation) {
-        Connections::<T>::insert(to, from, relation);
+    pub fn connect(from: &T::AccountId, to: &T::AccountId) {
+        Connections::<T>::insert(to, from, Relation::Pending);
+    }
+
+    pub fn do_connect(from: &T::AccountId, to: &T::AccountId) {
+        Connections::<T>::insert(to, from, Relation::Connected);
     }
 
     pub fn disconnect(from: &T::AccountId, to: &T::AccountId) {
         Connections::<T>::remove(to, from);
     }
 
-    pub fn create_group(group_admin: &T::AccountId, group_id: &GroupId, group_info: &GroupInfo) {
+    pub fn create_group(group_admin: &T::AccountId, group_id: &T::GroupId, group_info: &GroupInfo) {
         Groups::<T>::insert(group_id, Some(group_info));
         GroupMembers::<T>::insert(group_id, group_admin, AccessControl::SuperAdmin);
     }
 
-    pub fn delete_group(group_id: &GroupId) {
+    pub fn delete_group(group_id: &T::GroupId) {
         // None group_info indicates that the group is deleted. If the deletion
         // reach the removal limit, the group will be deleted next time from the
         // on_idle hook.
@@ -34,7 +38,7 @@ impl<T: Config> Pallet<T> {
 
     pub fn join(
         who: &T::AccountId,
-        group_id: &GroupId,
+        group_id: &T::GroupId,
         access_control: &AccessControl,
     ) -> Result<(), Error<T>> {
         ensure!(
@@ -71,7 +75,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub fn do_join(who: &T::AccountId, group_id: &GroupId) -> Result<(), Error<T>> {
+    pub fn do_join(who: &T::AccountId, group_id: &T::GroupId) -> Result<(), Error<T>> {
         let access_control = GroupMembers::<T>::get(group_id, who);
 
         ensure!(access_control.is_some(), Error::<T>::NeverJoining);
@@ -114,7 +118,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub fn disjoin(who: &T::AccountId, group_id: &GroupId) {
+    pub fn disjoin(who: &T::AccountId, group_id: &T::GroupId) {
         GroupMembers::<T>::remove(group_id, who);
     }
 }

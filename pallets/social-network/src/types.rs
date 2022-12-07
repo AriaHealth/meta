@@ -6,7 +6,6 @@ use scale_info::TypeInfo;
 use sp_std::cmp::{Eq, PartialEq};
 
 pub type GroupInfo = BoundedVec<u8, ConstU32<GROUP_INFO_MAX_LEN>>;
-pub type GroupId = [u8; 32];
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo, MaxEncodedLen, Copy)]
 pub enum AccessControl {
