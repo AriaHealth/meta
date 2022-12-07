@@ -19,7 +19,7 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
     use crate::traits::ConnectionRuler;
-    use crate::types::{AccessControl, GroupInfo, Relation};
+    use crate::types::{AccessControl, AccountDetail, GroupInfo, Relation};
 
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Get;
@@ -45,6 +45,11 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
+
+    #[pallet::storage]
+    #[pallet::getter(fn accounts)]
+    pub type Accounts<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, AccountDetail<T::GroupId, T::AccountId>>;
 
     #[pallet::storage]
     #[pallet::getter(fn connections)]
