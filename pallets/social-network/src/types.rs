@@ -3,7 +3,7 @@ use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_std::cmp::{Eq, PartialEq};
 
-use crate::constants::{GROUP_INFO_MAX_LEN, MAX_ADMINSHIP, MAX_MEMBERSHIP, USER_INFO_MAX_LEN};
+use crate::constants::{GROUP_INFO_MAX_LEN, USER_INFO_MAX_LEN};
 
 pub type GroupInfo = BoundedVec<u8, ConstU32<GROUP_INFO_MAX_LEN>>;
 pub type AccountInfo = BoundedVec<u8, ConstU32<USER_INFO_MAX_LEN>>;
