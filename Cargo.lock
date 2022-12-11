@@ -3974,6 +3974,7 @@ dependencies = [
 name = "pallet-social-network"
 version = "0.0.0"
 dependencies = [
+ "common",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

@@ -415,7 +415,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        UserConnection: pallet_social_network::{Pallet,Event<T>},
+        SocialNetwork: pallet_social_network::{Pallet,Event<T>},
         DeliveryNetwork: pallet_delivery_network::{Pallet,Event<T>},
         MetaRegistry: pallet_meta_registry::{Pallet,Event<T>},
         PublicKeyRegistry: pallet_public_key_registry::{Pallet,Event<T>},

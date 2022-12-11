@@ -1,27 +1,29 @@
 use super::pallet::*;
 use frame_support::ensure;
 
-use crate::types::{AccessControl, AccountStatus, GroupId, GroupInfo, Relation};
+use common::types::{Country, Region, SubRegion};
+
+use crate::types::{AccessControl, AccountStatus, Group, GroupId, GroupInfo, Relation};
 
 impl<T: Config> Pallet<T> {
-    pub fn connect(from: &T::AccountId, to: &T::AccountId) -> Result<(), Error<T>> {
-        let account = Accounts::<T>::get(to);
-        let connection = Connections::<T>::get(from, to);
+    pub fn connect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
+        let to = Accounts::<T>::get(to_id);
+        let connection = Connections::<T>::get(from_id, to_id);
 
-        ensure!(account.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(to.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            account.unwrap().status == AccountStatus::Live,
+            to.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
         ensure!(connection.is_none(), Error::<T>::AlreadyConnecting);
 
-        Connections::<T>::insert(from, to, Relation::Pending);
+        Connections::<T>::insert(from_id, to_id, Relation::Pending);
 
         Ok(())
     }
 
-    pub fn do_connect(from: &T::AccountId, to: &T::AccountId) -> Result<(), Error<T>> {
-        let connection = Connections::<T>::get(from, to);
+    pub fn do_connect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
+        let connection = Connections::<T>::get(from_id, to_id);
 
         ensure!(connection.is_some(), Error::<T>::NeverConnecting);
         ensure!(
@@ -29,150 +31,153 @@ impl<T: Config> Pallet<T> {
             Error::<T>::OnlyPendingAllowed
         );
 
-        Connections::<T>::remove(from, to);
-        Connections::<T>::insert(from, to, Relation::Connected);
+        Connections::<T>::remove(from_id, to_id);
+        Connections::<T>::insert(from_id, to_id, Relation::Connected);
 
         Ok(())
     }
 
-    pub fn disconnect(from: &T::AccountId, to: &T::AccountId) -> Result<(), Error<T>> {
-        let connection = Connections::<T>::get(from, to);
+    pub fn disconnect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
+        let connection = Connections::<T>::get(from_id, to_id);
 
         ensure!(connection.is_some(), Error::<T>::NeverConnecting);
 
-        Connections::<T>::remove(from, to);
+        Connections::<T>::remove(from_id, to_id);
 
         Ok(())
     }
 
     pub fn create_group(
-        group_admin: &T::AccountId,
+        admin_id: &T::AccountId,
         group_id: &GroupId,
         group_info: &GroupInfo,
+        country: &Country,
+        region: &Region,
+        sub_region: &SubRegion,
     ) -> Result<(), Error<T>> {
-        let account = Accounts::<T>::get(group_admin);
+        let admin = Accounts::<T>::get(admin_id);
         let group = Groups::<T>::get(group_id);
 
         ensure!(group.is_none(), Error::<T>::GroupAlreadyExisted);
-        ensure!(account.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(admin.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            account.unwrap().status == AccountStatus::Live,
+            admin.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
 
-        Groups::<T>::insert(group_id, Some(group_info));
-        GroupMembers::<T>::insert(group_id, group_admin, AccessControl::SuperAdmin);
+        Groups::<T>::insert(
+            group_id,
+            Group {
+                owner: admin_id.clone(),
+                info: group_info.clone(),
+                country: country.clone(),
+                region: region.clone(),
+                sub_region: sub_region.clone(),
+                admins: 1,
+                members: 1,
+            },
+        );
+        AccessControls::<T>::insert(group_id, admin_id, AccessControl::SuperAdmin);
 
         Ok(())
     }
 
     pub fn join(
-        who: &T::AccountId,
+        invoker_id: &T::AccountId,
+        who_id: &T::AccountId,
         group_id: &GroupId,
         access_control: &AccessControl,
     ) -> Result<(), Error<T>> {
-        let account = Accounts::<T>::get(who);
+        let who = Accounts::<T>::get(who_id);
+        let invoker = Accounts::<T>::get(invoker_id);
+        let invoker_access = AccessControls::<T>::get(group_id, invoker_id);
         let group = Groups::<T>::get(group_id);
 
         ensure!(group.is_some(), Error::<T>::GroupNotExisted);
-        ensure!(account.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(who.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            account.unwrap().status == AccountStatus::Live,
+            who.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
+        ensure!(invoker.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            [
-                AccessControl::PendingSuperAdmin,
-                AccessControl::PendingAdmin,
-                AccessControl::PendingReadOnly,
-                AccessControl::PendingReadWrite,
-                AccessControl::PendingMember
-            ]
-            .contains(access_control),
-            Error::<T>::OnlyPendingAllowed
+            invoker.unwrap().status == AccountStatus::Live,
+            Error::<T>::AccountNotLive
+        );
+        ensure!(invoker_access.is_some(), Error::<T>::NeverJoining);
+        ensure!(
+            [AccessControl::SuperAdmin, AccessControl::Admin].contains(&invoker_access.unwrap()),
+            Error::<T>::OnlyAdminAllowed
         );
 
-        match access_control {
-            AccessControl::PendingSuperAdmin => {
-                GroupMembers::<T>::insert(group_id, who, AccessControl::SuperAdmin);
+        Groups::<T>::try_mutate(group_id, |maybe_details| -> Result<(), Error<T>> {
+            let mut details = maybe_details.take().ok_or(Error::<T>::GroupNotExisted)?;
+
+            let members = details.members.checked_add(1).ok_or(Error::<T>::Overflow)?;
+            details.members = members;
+
+            if [AccessControl::SuperAdmin, AccessControl::Admin].contains(access_control) {
+                let admins = details.admins.checked_add(1).ok_or(Error::<T>::Overflow)?;
+
+                details.admins = admins;
             }
-            AccessControl::PendingAdmin => {
-                GroupMembers::<T>::insert(group_id, who, AccessControl::Admin);
-            }
-            AccessControl::PendingReadOnly => {
-                GroupMembers::<T>::insert(group_id, who, AccessControl::ReadOnly);
-            }
-            AccessControl::PendingReadWrite => {
-                GroupMembers::<T>::insert(group_id, who, AccessControl::ReadWrite);
-            }
-            AccessControl::PendingMember => {
-                GroupMembers::<T>::insert(group_id, who, AccessControl::Member);
-            }
-            _ => (),
-        }
+
+            *maybe_details = Some(details);
+
+            Ok(())
+        })?;
+
+        AccessControls::<T>::insert(group_id, who_id, access_control);
 
         Ok(())
     }
 
-    pub fn do_join(who: &T::AccountId, group_id: &GroupId) -> Result<(), Error<T>> {
-        let member = GroupMembers::<T>::get(group_id, who);
+    pub fn disjoin(
+        invoker_id: &T::AccountId,
+        who_id: &T::AccountId,
+        group_id: &GroupId,
+    ) -> Result<(), Error<T>> {
+        let who = Accounts::<T>::get(who_id);
+        let who_access = AccessControls::<T>::get(group_id, who_id);
+        let invoker = Accounts::<T>::get(invoker_id);
+        let invoker_access = AccessControls::<T>::get(group_id, invoker_id);
         let group = Groups::<T>::get(group_id);
 
         ensure!(group.is_some(), Error::<T>::GroupNotExisted);
-        ensure!(member.is_some(), Error::<T>::NeverJoining);
+        ensure!(who_access.is_some(), Error::<T>::NeverJoining);
+        ensure!(who.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            [
-                AccessControl::PendingSuperAdmin,
-                AccessControl::PendingAdmin,
-                AccessControl::PendingReadOnly,
-                AccessControl::PendingReadWrite,
-                AccessControl::PendingMember
-            ]
-            .contains(&member.unwrap()),
-            Error::<T>::AlreadyJoined
-        );
-
-        match member {
-            Some(AccessControl::PendingSuperAdmin) => {
-                GroupMembers::<T>::remove(group_id, who);
-                GroupMembers::<T>::insert(group_id, who, AccessControl::SuperAdmin);
-            }
-            Some(AccessControl::PendingAdmin) => {
-                GroupMembers::<T>::remove(group_id, who);
-                GroupMembers::<T>::insert(group_id, who, AccessControl::Admin);
-            }
-            Some(AccessControl::PendingReadOnly) => {
-                GroupMembers::<T>::remove(group_id, who);
-                GroupMembers::<T>::insert(group_id, who, AccessControl::ReadOnly);
-            }
-            Some(AccessControl::PendingReadWrite) => {
-                GroupMembers::<T>::remove(group_id, who);
-                GroupMembers::<T>::insert(group_id, who, AccessControl::ReadWrite);
-            }
-            Some(AccessControl::PendingMember) => {
-                GroupMembers::<T>::remove(group_id, who);
-                GroupMembers::<T>::insert(group_id, who, AccessControl::Member);
-            }
-            _ => (),
-        }
-
-        Ok(())
-    }
-
-    pub fn disjoin(who: &T::AccountId, group_id: &GroupId) -> Result<(), Error<T>> {
-        let account = Accounts::<T>::get(who);
-        let group = Groups::<T>::get(group_id);
-        let member = GroupMembers::<T>::get(group_id, who);
-
-        ensure!(group.is_some(), Error::<T>::GroupNotExisted);
-        ensure!(member.is_some(), Error::<T>::NeverJoining);
-        ensure!(account.is_some(), Error::<T>::AccountNotExisted);
-        ensure!(
-            account.unwrap().status == AccountStatus::Live,
+            who.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
+        ensure!(invoker.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(
+            invoker.unwrap().status == AccountStatus::Live,
+            Error::<T>::AccountNotLive
+        );
+        ensure!(invoker_access.is_some(), Error::<T>::NeverJoining);
+        ensure!(
+            [AccessControl::SuperAdmin, AccessControl::Admin].contains(&invoker_access.unwrap()),
+            Error::<T>::OnlyAdminAllowed
+        );
 
-        GroupMembers::<T>::remove(group_id, who);
+        Groups::<T>::try_mutate(group_id, |maybe_details| -> Result<(), Error<T>> {
+            let mut details = maybe_details.take().ok_or(Error::<T>::GroupNotExisted)?;
+
+            let members = details.members.checked_sub(1).unwrap_or(0);
+            details.members = members;
+
+            if [AccessControl::SuperAdmin, AccessControl::Admin].contains(&who_access.unwrap()) {
+                let admins = details.admins.checked_sub(1).unwrap_or(0);
+
+                details.admins = admins;
+            }
+
+            *maybe_details = Some(details);
+
+            Ok(())
+        })?;
+        AccessControls::<T>::remove(group_id, who_id);
 
         Ok(())
     }

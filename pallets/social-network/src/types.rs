@@ -3,6 +3,8 @@ use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_std::cmp::{Eq, PartialEq};
 
+use common::types::{Country, Region, SubRegion};
+
 use crate::constants::{GROUP_INFO_MAX_LEN, GROUP_OID_MAX_LEN, USER_INFO_MAX_LEN};
 
 pub type GroupInfo = BoundedVec<u8, ConstU32<GROUP_INFO_MAX_LEN>>;
@@ -15,12 +17,7 @@ pub enum AccessControl {
     Admin,
     ReadOnly,
     ReadWrite,
-    Member,
-    PendingSuperAdmin,
-    PendingAdmin,
-    PendingReadOnly,
-    PendingReadWrite,
-    PendingMember,
+    Customer,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo, MaxEncodedLen, Copy)]
@@ -50,4 +47,15 @@ pub struct AccountDetail<AccountId> {
 
     /// The externally stored account information
     pub info: AccountInfo,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct Group<AccountId> {
+    pub owner: AccountId,
+    pub info: GroupInfo,
+    pub country: Country,
+    pub region: Region,
+    pub sub_region: SubRegion,
+    pub admins: u32,
+    pub members: u32,
 }

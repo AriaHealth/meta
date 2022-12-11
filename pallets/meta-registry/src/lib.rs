@@ -17,10 +17,8 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
-    use scale_info::TypeInfo;
 
-    use crate::types::{AccessType, RegistryHash, RegistryId, RegistryInfo};
-    use common::types::{Country, Region, SubRegion};
+    use crate::types::{AccessType, Registry, RegistryId};
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -29,25 +27,14 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
     }
 
-    #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-    #[scale_info(skip_type_params(T))]
-    #[codec(mel_bound())]
-    pub struct Registry {
-        pub hash: RegistryHash,
-        pub info: RegistryInfo,
-        pub salable: bool,
-        pub country: Country,
-        pub region: Region,
-        pub sub_region: SubRegion,
-    }
-
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
     #[pallet::getter(fn registries)]
-    pub type Registries<T: Config> = StorageMap<_, Blake2_128Concat, RegistryId, Registry>;
+    pub type Registries<T: Config> =
+        StorageMap<_, Blake2_128Concat, RegistryId, Registry<T::AccountId>>;
     #[pallet::storage]
     #[pallet::getter(fn accesses)]
     pub type Accesses<T: Config> = StorageDoubleMap<

@@ -260,6 +260,8 @@ std = [
 	'pallet-example-offchain-worker/std',
 	'pallet-grandpa/std',
 	'pallet-ocw/std',
+	'pallet-social-network/std',
+	'pallet-meta-registry/std',
 	'pallet-randomness-collective-flip/std',
 	'pallet-sudo/std',
 	'pallet-template/std',

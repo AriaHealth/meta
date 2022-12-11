@@ -19,7 +19,7 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
     use crate::traits::ConnectionRuler;
-    use crate::types::{AccessControl, AccountDetail, GroupId, GroupInfo, Relation};
+    use crate::types::{AccessControl, AccountDetail, Group, GroupId, Relation};
 
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Get;
@@ -51,11 +51,11 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn groups)]
-    pub type Groups<T: Config> = StorageMap<_, Twox64Concat, GroupId, Option<GroupInfo>>;
+    pub type Groups<T: Config> = StorageMap<_, Twox64Concat, GroupId, Group<T::AccountId>>;
 
     #[pallet::storage]
     #[pallet::getter(fn group_members)]
-    pub type GroupMembers<T: Config> =
+    pub type AccessControls<T: Config> =
         StorageDoubleMap<_, Twox64Concat, GroupId, Twox64Concat, T::AccountId, AccessControl>;
 
     #[pallet::event]
@@ -67,16 +67,18 @@ pub mod pallet {
     // Errors inform users that something went wrong.
     #[pallet::error]
     pub enum Error<T> {
-        OnlyPendingAllowed,
-        AlreadyJoined,
-        AlreadyJoining,
+        AccountNotExisted,
+        AccountNotLive,
         AlreadyConnected,
         AlreadyConnecting,
-        AccountNotLive,
-        AccountNotExisted,
-        NeverConnecting,
-        NeverJoining,
+        AlreadyJoined,
+        AlreadyJoining,
         GroupAlreadyExisted,
         GroupNotExisted,
+        NeverConnecting,
+        NeverJoining,
+        OnlyAdminAllowed,
+        OnlyPendingAllowed,
+        Overflow,
     }
 }
