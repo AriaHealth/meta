@@ -23,6 +23,7 @@ pub mod pallet {
 
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Get;
+    use frame_system::pallet_prelude::*;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -80,5 +81,15 @@ pub mod pallet {
         OnlyAdminAllowed,
         OnlyPendingAllowed,
         Overflow,
+    }
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        #[pallet::weight(10_000)]
+        pub fn register_account(origin: OriginFor<T>, id: T::AccountId) -> DispatchResult {
+            let creator_id = ensure_signed(origin)?;
+
+            Ok(())
+        }
     }
 }
