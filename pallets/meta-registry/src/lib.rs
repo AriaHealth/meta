@@ -19,9 +19,8 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use scale_info::TypeInfo;
 
-    use crate::types::{
-        AccessType, Country, Region, RegistryHash, RegistryId, RegistryInfo, SubRegion,
-    };
+    use crate::types::{AccessType, RegistryHash, RegistryId, RegistryInfo};
+    use common::types::{Country, Region, SubRegion};
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
