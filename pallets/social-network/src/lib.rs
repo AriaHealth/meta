@@ -22,16 +22,12 @@ pub mod pallet {
     use crate::types::{AccessControl, AccountDetail, Group, GroupId, Relation};
 
     use frame_support::pallet_prelude::*;
-    use frame_support::traits::Get;
     use frame_system::pallet_prelude::*;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
-        #[pallet::constant]
-        type RemovalLimit: Get<u32>;
 
         type ConnectionRuler: ConnectionRuler<Self>;
     }
@@ -86,7 +82,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000)]
-        pub fn register_account(origin: OriginFor<T>, id: T::AccountId) -> DispatchResult {
+        pub fn do_something(origin: OriginFor<T>) -> DispatchResult {
             let creator_id = ensure_signed(origin)?;
 
             Ok(())

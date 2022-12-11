@@ -285,13 +285,9 @@ impl pallet_sudo::Config for Runtime {
 }
 
 // Aria pallets configuration
-parameter_types! {
-    pub const RemovalLimit: u32 = 100;
-}
 
 impl pallet_social_network::Config for Runtime {
     type Event = Event;
-    type RemovalLimit = RemovalLimit;
     type ConnectionRuler = ();
 }
 

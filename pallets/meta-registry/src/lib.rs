@@ -17,8 +17,10 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
+    use frame_system::pallet_prelude::*;
+    use sp_std::vec::Vec;
 
-    use crate::types::{AccessType, Registry, RegistryId};
+    use crate::types::{AccessType, Chunk, ChunkHash, Registry, RegistryId};
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -35,6 +37,16 @@ pub mod pallet {
     #[pallet::getter(fn registries)]
     pub type Registries<T: Config> =
         StorageMap<_, Blake2_128Concat, RegistryId, Registry<T::AccountId>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn chunks)]
+    pub type Chunks<T: Config> = StorageMap<_, Twox64Concat, ChunkHash, Chunk<T::BlockNumber>>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn inverted_chunks_next_block)]
+    pub type InvertedChunksNextBlock<T: Config> =
+        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<ChunkHash>>;
+
     #[pallet::storage]
     #[pallet::getter(fn accesses)]
     pub type Accesses<T: Config> = StorageDoubleMap<
@@ -63,5 +75,15 @@ pub mod pallet {
         NoneValue,
         /// Errors should have helpful documentation associated with them.
         StorageOverflow,
+    }
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        #[pallet::weight(10_000)]
+        pub fn do_something(origin: OriginFor<T>, id: T::AccountId) -> DispatchResult {
+            let creator_id = ensure_signed(origin)?;
+
+            Ok(())
+        }
     }
 }
