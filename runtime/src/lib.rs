@@ -293,8 +293,6 @@ impl pallet_social_network::Config for Runtime {
     type Event = Event;
     type RemovalLimit = RemovalLimit;
     type ConnectionRuler = ();
-    type GroupId = u32;
-    type GroupIdParameter = u32;
 }
 
 impl pallet_delivery_network::Config for Runtime {

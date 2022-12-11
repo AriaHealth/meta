@@ -1,7 +1,7 @@
 use super::pallet::*;
 use frame_support::ensure;
 
-use crate::types::{AccessControl, AccountStatus, GroupInfo, Relation};
+use crate::types::{AccessControl, AccountStatus, GroupId, GroupInfo, Relation};
 
 impl<T: Config> Pallet<T> {
     pub fn connect(from: &T::AccountId, to: &T::AccountId) -> Result<(), Error<T>> {
@@ -47,7 +47,7 @@ impl<T: Config> Pallet<T> {
 
     pub fn create_group(
         group_admin: &T::AccountId,
-        group_id: &T::GroupId,
+        group_id: &GroupId,
         group_info: &GroupInfo,
     ) -> Result<(), Error<T>> {
         let account = Accounts::<T>::get(group_admin);
@@ -68,7 +68,7 @@ impl<T: Config> Pallet<T> {
 
     pub fn join(
         who: &T::AccountId,
-        group_id: &T::GroupId,
+        group_id: &GroupId,
         access_control: &AccessControl,
     ) -> Result<(), Error<T>> {
         let account = Accounts::<T>::get(who);
@@ -114,7 +114,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub fn do_join(who: &T::AccountId, group_id: &T::GroupId) -> Result<(), Error<T>> {
+    pub fn do_join(who: &T::AccountId, group_id: &GroupId) -> Result<(), Error<T>> {
         let member = GroupMembers::<T>::get(group_id, who);
         let group = Groups::<T>::get(group_id);
 
@@ -159,7 +159,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    pub fn disjoin(who: &T::AccountId, group_id: &T::GroupId) -> Result<(), Error<T>> {
+    pub fn disjoin(who: &T::AccountId, group_id: &GroupId) -> Result<(), Error<T>> {
         let account = Accounts::<T>::get(who);
         let group = Groups::<T>::get(group_id);
         let member = GroupMembers::<T>::get(group_id, who);
