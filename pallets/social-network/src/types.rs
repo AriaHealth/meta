@@ -17,8 +17,8 @@ pub type GroupId = BoundedVec<u8, ConstU32<GROUP_OID_MAX_LEN>>;
 pub enum AccessControl {
     SuperAdmin,
     Admin,
-    ReadOnly,
     ReadWrite,
+    ReadOnly,
     Customer,
 }
 

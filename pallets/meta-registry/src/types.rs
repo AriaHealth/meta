@@ -42,12 +42,11 @@ pub struct Registry<AccountId> {
     pub sub_region: SubRegion,
     pub accessors: u32,
     pub status: Accessibility,
-    pub chunks: Vec<ChunkHash>,
+    pub chunk_hashes: Vec<ChunkHash>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct Chunk<BlockNumber> {
     pub last_block: BlockNumber,
-    pub next_block: BlockNumber,
     pub status: Accessibility,
 }

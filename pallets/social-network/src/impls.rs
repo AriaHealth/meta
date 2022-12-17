@@ -110,19 +110,19 @@ impl<T: Config> Pallet<T> {
             Error::<T>::OnlyAdminAllowed
         );
 
-        Groups::<T>::try_mutate(group_id, |maybe_details| -> Result<(), Error<T>> {
-            let mut details = maybe_details.take().ok_or(Error::<T>::GroupNotExisted)?;
+        Groups::<T>::try_mutate(group_id, |maybe_group| -> Result<(), Error<T>> {
+            let mut group = maybe_group.take().ok_or(Error::<T>::GroupNotExisted)?;
 
-            let members = details.members.checked_add(1).ok_or(Error::<T>::Overflow)?;
-            details.members = members;
+            let members = group.members.checked_add(1).ok_or(Error::<T>::Overflow)?;
+            group.members = members;
 
             if [AccessControl::SuperAdmin, AccessControl::Admin].contains(access_control) {
-                let admins = details.admins.checked_add(1).ok_or(Error::<T>::Overflow)?;
+                let admins = group.admins.checked_add(1).ok_or(Error::<T>::Overflow)?;
 
-                details.admins = admins;
+                group.admins = admins;
             }
 
-            *maybe_details = Some(details);
+            *maybe_group = Some(group);
 
             Ok(())
         })?;
@@ -161,19 +161,19 @@ impl<T: Config> Pallet<T> {
             Error::<T>::OnlyAdminAllowed
         );
 
-        Groups::<T>::try_mutate(group_id, |maybe_details| -> Result<(), Error<T>> {
-            let mut details = maybe_details.take().ok_or(Error::<T>::GroupNotExisted)?;
+        Groups::<T>::try_mutate(group_id, |maybe_group| -> Result<(), Error<T>> {
+            let mut group = maybe_group.take().ok_or(Error::<T>::GroupNotExisted)?;
 
-            let members = details.members.checked_sub(1).unwrap_or(0);
-            details.members = members;
+            let members = group.members.checked_sub(1).unwrap_or(0);
+            group.members = members;
 
             if [AccessControl::SuperAdmin, AccessControl::Admin].contains(&who_access.unwrap()) {
-                let admins = details.admins.checked_sub(1).unwrap_or(0);
+                let admins = group.admins.checked_sub(1).unwrap_or(0);
 
-                details.admins = admins;
+                group.admins = admins;
             }
 
-            *maybe_details = Some(details);
+            *maybe_group = Some(group);
 
             Ok(())
         })?;

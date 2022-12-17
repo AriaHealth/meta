@@ -43,9 +43,8 @@ pub mod pallet {
     pub type Chunks<T: Config> = StorageMap<_, Twox64Concat, ChunkHash, Chunk<T::BlockNumber>>;
 
     #[pallet::storage]
-    #[pallet::getter(fn inverted_chunks_next_block)]
-    pub type InvertedChunksNextBlock<T: Config> =
-        StorageMap<_, Twox64Concat, T::BlockNumber, Vec<ChunkHash>>;
+    #[pallet::getter(fn chunk_block)]
+    pub type ChunkBlock<T: Config> = StorageMap<_, Twox64Concat, T::BlockNumber, Vec<ChunkHash>>;
 
     #[pallet::storage]
     #[pallet::getter(fn accesses)]
@@ -71,10 +70,12 @@ pub mod pallet {
     // Errors inform users that something went wrong.
     #[pallet::error]
     pub enum Error<T> {
-        /// Error names should be descriptive.
         NoneValue,
-        /// Errors should have helpful documentation associated with them.
         StorageOverflow,
+        ChunkNotExisted,
+        ChunkAlreadyExisted,
+        RegistryAlreadyExisted,
+        Overflow,
     }
 
     #[pallet::call]
