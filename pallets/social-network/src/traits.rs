@@ -2,7 +2,7 @@ use crate::Config;
 
 use frame_support::dispatch::DispatchResultWithPostInfo;
 
-pub trait ConnectionRuler<T: Config> {
+pub trait ConnectionRules<T: Config> {
     /// Check if `from` can connect to `to`. If `false`,the connection will be rejected.
     /// If `true`, the connection will be accepted. If the connection is accepted, `on_connect`
     /// will be called. If the connection is rejected, `on_connect` will not be called. If
@@ -30,7 +30,7 @@ pub trait ConnectionRuler<T: Config> {
     fn on_join_group(&self, who: &T::AccountId, group_id: &[u8; 32]) -> DispatchResultWithPostInfo;
 }
 
-impl<T: Config> ConnectionRuler<T> for () {
+impl<T: Config> ConnectionRules<T> for () {
     #[allow(unused_variables)]
     fn can_connect(&self, from: &T::AccountId, to: &T::AccountId) -> bool {
         true

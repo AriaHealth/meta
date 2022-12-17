@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod constants;
+mod traits;
 mod types;
 
 pub use pallet::*;
@@ -20,6 +21,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
 
+    use crate::traits::IssuerRules;
     use crate::types::{AccessType, Chunk, ChunkHash, Registry, RegistryId};
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
@@ -27,6 +29,8 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type IssuerRules: IssuerRules<Self>;
     }
 
     #[pallet::pallet]

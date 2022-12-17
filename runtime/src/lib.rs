@@ -288,7 +288,7 @@ impl pallet_sudo::Config for Runtime {
 
 impl pallet_social_network::Config for Runtime {
     type Event = Event;
-    type ConnectionRuler = ();
+    type ConnectionRules = ();
 }
 
 impl pallet_delivery_network::Config for Runtime {
@@ -301,6 +301,7 @@ impl pallet_marketplace::Config for Runtime {
 
 impl pallet_meta_registry::Config for Runtime {
     type Event = Event;
+    type IssuerRules = ();
 }
 
 impl pallet_public_key_registry::Config for Runtime {
