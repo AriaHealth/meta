@@ -798,16 +798,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "common"
-version = "0.0.0"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-std",
-]
-
-[[package]]
 name = "concurrent-queue"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3846,17 +3836,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-healthcare"
-version = "0.0.0"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-key-registry"
 version = "1.0.0"
 dependencies = [
@@ -3893,11 +3872,11 @@ dependencies = [
 name = "pallet-meta-registry"
 version = "0.0.0"
 dependencies = [
- "common",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
+ "region 0.0.0",
  "scale-info",
  "sp-core",
  "sp-io",
@@ -3944,11 +3923,11 @@ dependencies = [
 name = "pallet-social-network"
 version = "0.0.0"
 dependencies = [
- "common",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
+ "region 0.0.0",
  "scale-info",
  "sp-core",
  "sp-io",
@@ -4873,6 +4852,16 @@ name = "regex-syntax"
 version = "0.6.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
+
+[[package]]
+name = "region"
+version = "0.0.0"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
 
 [[package]]
 name = "region"
@@ -7734,7 +7723,7 @@ dependencies = [
  "log",
  "paste 1.0.5",
  "psm",
- "region",
+ "region 2.2.0",
  "rustc-demangle",
  "serde",
  "smallvec",
@@ -7838,7 +7827,7 @@ dependencies = [
  "more-asserts",
  "object",
  "rayon",
- "region",
+ "region 2.2.0",
  "serde",
  "target-lexicon",
  "thiserror",
@@ -7903,7 +7892,7 @@ dependencies = [
  "memoffset",
  "more-asserts",
  "rand 0.8.4",
- "region",
+ "region 2.2.0",
  "thiserror",
  "wasmtime-environ",
  "winapi 0.3.9",

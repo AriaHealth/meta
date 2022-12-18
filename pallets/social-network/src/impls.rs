@@ -1,7 +1,7 @@
 use super::pallet::*;
 use frame_support::ensure;
 
-use common::types::{Country, Region, SubRegion};
+use region::{Country, Region, SubRegion};
 
 use crate::{
     constants::MAX_CUSTODIANS,

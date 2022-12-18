@@ -3,7 +3,7 @@ use crate::Config;
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use sp_std::vec::Vec;
 
-use common::types::Country;
+use region::Country;
 
 use crate::types::{ChunkHash, RegistryHash, RegistryId, RegistryInfo};
 

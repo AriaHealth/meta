@@ -5,7 +5,7 @@ use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_std::cmp::{Eq, PartialEq};
 
-use common::types::{Country, Region, SubRegion};
+use region::{Country, Region, SubRegion};
 
 use crate::constants::{GROUP_INFO_MAX_LEN, GROUP_OID_MAX_LEN, USER_INFO_MAX_LEN};
 

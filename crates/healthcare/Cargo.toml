@@ -1,5 +1,5 @@
 [package]
-name = 'common'
+name = 'healthcare'
 version = '0.0.0'
 description = 'Pallet for storing meta information'
 authors = ['Aria Health <https://github.com/AriaHealth>']

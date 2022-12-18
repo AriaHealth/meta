@@ -43,9 +43,9 @@ default-features = false
 features = ['derive']
 version = '1.0'
 
-[dependencies.common]
+[dependencies.region]
 default-features = false
-path = "../../crates/common"
+path = "../../crates/region"
 version = '0.0.0'
 
 [dev-dependencies.sp-core]

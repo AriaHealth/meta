@@ -4,7 +4,7 @@ use frame_support::ensure;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 
-use common::{region_of, sub_region_of};
+use region::{region_of, sub_region_of};
 
 use crate::types::{Accessibility, ChunkHash};
 
