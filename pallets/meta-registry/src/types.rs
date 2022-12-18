@@ -17,6 +17,7 @@ pub type ChunkHash = [u8; 32];
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub enum Accessibility {
+    New,
     Healthy,
     Broken,
 }
@@ -47,6 +48,7 @@ pub struct Registry<AccountId> {
 
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct Chunk<BlockNumber> {
+    pub registry_id: RegistryId,
     pub last_block: BlockNumber,
     pub status: Accessibility,
 }

@@ -77,6 +77,7 @@ pub mod pallet {
         NoneValue,
         StorageOverflow,
         ChunkNotExisted,
+        RegistryNotExisted,
         ChunkAlreadyExisted,
         RegistryAlreadyExisted,
         Overflow,

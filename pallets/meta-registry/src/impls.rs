@@ -28,6 +28,19 @@ impl<T: Config> Pallet<T> {
             ensure!(maybe_chunk.is_none(), Error::<T>::ChunkAlreadyExisted);
         }
 
+        let now = <frame_system::Pallet<T>>::block_number();
+
+        for chunk_hash in chunk_hashes.clone().iter() {
+            Chunks::<T>::insert(
+                chunk_hash,
+                Chunk {
+                    registry_id: registry_id.clone(),
+                    last_block: now,
+                    status: Accessibility::New,
+                },
+            )
+        }
+
         Registries::<T>::insert(
             registry_id,
             Registry {
@@ -47,6 +60,14 @@ impl<T: Config> Pallet<T> {
         );
 
         Ok(())
+    }
+
+    pub fn delete_registry(registry_id: &RegistryId, owner: &AccountId, issuer: &AccountId) {
+        let registry = Registries::<T>::get(registry_id);
+
+        ensure!(registry.is_some(), Error::<T>::Registry);
+
+        // TODO
     }
 
     pub fn update_chunk(
