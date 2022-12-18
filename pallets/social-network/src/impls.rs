@@ -7,15 +7,15 @@ use crate::types::{AccessControl, AccountStatus, Group, GroupId, GroupInfo, Rela
 
 impl<T: Config> Pallet<T> {
     pub fn connect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
-        let to = Accounts::<T>::get(to_id);
-        let connection = Connections::<T>::get(from_id, to_id);
+        let maybe_to = Accounts::<T>::get(to_id);
+        let maybe_connection = Connections::<T>::get(from_id, to_id);
 
-        ensure!(to.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(maybe_to.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            to.unwrap().status == AccountStatus::Live,
+            maybe_to.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
-        ensure!(connection.is_none(), Error::<T>::AlreadyConnecting);
+        ensure!(maybe_connection.is_none(), Error::<T>::AlreadyConnecting);
 
         Connections::<T>::insert(from_id, to_id, Relation::Pending);
 
@@ -23,11 +23,11 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn do_connect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
-        let connection = Connections::<T>::get(from_id, to_id);
+        let maybe_connection = Connections::<T>::get(from_id, to_id);
 
-        ensure!(connection.is_some(), Error::<T>::NeverConnecting);
+        ensure!(maybe_connection.is_some(), Error::<T>::NeverConnecting);
         ensure!(
-            connection.unwrap() == Relation::Pending,
+            maybe_connection.unwrap() == Relation::Pending,
             Error::<T>::OnlyPendingAllowed
         );
 
@@ -38,9 +38,9 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn disconnect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
-        let connection = Connections::<T>::get(from_id, to_id);
+        let maybe_connection = Connections::<T>::get(from_id, to_id);
 
-        ensure!(connection.is_some(), Error::<T>::NeverConnecting);
+        ensure!(maybe_connection.is_some(), Error::<T>::NeverConnecting);
 
         Connections::<T>::remove(from_id, to_id);
 
@@ -55,13 +55,13 @@ impl<T: Config> Pallet<T> {
         region: &Region,
         sub_region: &SubRegion,
     ) -> Result<(), Error<T>> {
-        let admin = Accounts::<T>::get(admin_id);
-        let group = Groups::<T>::get(group_id);
+        let maybe_admin = Accounts::<T>::get(admin_id);
+        let maybe_group = Groups::<T>::get(group_id);
 
-        ensure!(group.is_none(), Error::<T>::GroupAlreadyExisted);
-        ensure!(admin.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(maybe_group.is_none(), Error::<T>::GroupAlreadyExisted);
+        ensure!(maybe_admin.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            admin.unwrap().status == AccountStatus::Live,
+            maybe_admin.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
 
@@ -88,25 +88,26 @@ impl<T: Config> Pallet<T> {
         group_id: &GroupId,
         access_control: &AccessControl,
     ) -> Result<(), Error<T>> {
-        let who = Accounts::<T>::get(who_id);
-        let invoker = Accounts::<T>::get(invoker_id);
-        let invoker_access = AccessControls::<T>::get(group_id, invoker_id);
-        let group = Groups::<T>::get(group_id);
+        let maybe_who = Accounts::<T>::get(who_id);
+        let maybe_invoker = Accounts::<T>::get(invoker_id);
+        let maybe_invoker_access = AccessControls::<T>::get(group_id, invoker_id);
+        let maybe_group = Groups::<T>::get(group_id);
 
-        ensure!(group.is_some(), Error::<T>::GroupNotExisted);
-        ensure!(who.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(maybe_group.is_some(), Error::<T>::GroupNotExisted);
+        ensure!(maybe_who.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            who.unwrap().status == AccountStatus::Live,
+            maybe_who.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
-        ensure!(invoker.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(maybe_invoker.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            invoker.unwrap().status == AccountStatus::Live,
+            maybe_invoker.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
-        ensure!(invoker_access.is_some(), Error::<T>::NeverJoining);
+        ensure!(maybe_invoker_access.is_some(), Error::<T>::NeverJoining);
         ensure!(
-            [AccessControl::SuperAdmin, AccessControl::Admin].contains(&invoker_access.unwrap()),
+            [AccessControl::SuperAdmin, AccessControl::Admin]
+                .contains(&maybe_invoker_access.unwrap()),
             Error::<T>::OnlyAdminAllowed
         );
 
@@ -137,27 +138,28 @@ impl<T: Config> Pallet<T> {
         who_id: &T::AccountId,
         group_id: &GroupId,
     ) -> Result<(), Error<T>> {
-        let who = Accounts::<T>::get(who_id);
-        let who_access = AccessControls::<T>::get(group_id, who_id);
-        let invoker = Accounts::<T>::get(invoker_id);
-        let invoker_access = AccessControls::<T>::get(group_id, invoker_id);
-        let group = Groups::<T>::get(group_id);
+        let maybe_who = Accounts::<T>::get(who_id);
+        let maybe_who_access = AccessControls::<T>::get(group_id, who_id);
+        let maybe_invoker = Accounts::<T>::get(invoker_id);
+        let maybe_invoker_access = AccessControls::<T>::get(group_id, invoker_id);
+        let maybe_group = Groups::<T>::get(group_id);
 
-        ensure!(group.is_some(), Error::<T>::GroupNotExisted);
-        ensure!(who_access.is_some(), Error::<T>::NeverJoining);
-        ensure!(who.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(maybe_group.is_some(), Error::<T>::GroupNotExisted);
+        ensure!(maybe_who_access.is_some(), Error::<T>::NeverJoining);
+        ensure!(maybe_who.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            who.unwrap().status == AccountStatus::Live,
+            maybe_who.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
-        ensure!(invoker.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(maybe_invoker.is_some(), Error::<T>::AccountNotExisted);
         ensure!(
-            invoker.unwrap().status == AccountStatus::Live,
+            maybe_invoker.unwrap().status == AccountStatus::Live,
             Error::<T>::AccountNotLive
         );
-        ensure!(invoker_access.is_some(), Error::<T>::NeverJoining);
+        ensure!(maybe_invoker_access.is_some(), Error::<T>::NeverJoining);
         ensure!(
-            [AccessControl::SuperAdmin, AccessControl::Admin].contains(&invoker_access.unwrap()),
+            [AccessControl::SuperAdmin, AccessControl::Admin]
+                .contains(&maybe_invoker_access.unwrap()),
             Error::<T>::OnlyAdminAllowed
         );
 
@@ -167,7 +169,9 @@ impl<T: Config> Pallet<T> {
             let members = group.members.checked_sub(1).unwrap_or(0);
             group.members = members;
 
-            if [AccessControl::SuperAdmin, AccessControl::Admin].contains(&who_access.unwrap()) {
+            if [AccessControl::SuperAdmin, AccessControl::Admin]
+                .contains(&maybe_who_access.unwrap())
+            {
                 let admins = group.admins.checked_sub(1).unwrap_or(0);
 
                 group.admins = admins;

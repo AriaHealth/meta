@@ -63,9 +63,9 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn delete_registry(registry_id: &RegistryId, owner: &AccountId, issuer: &AccountId) {
-        let registry = Registries::<T>::get(registry_id);
+        let maybe_registry = Registries::<T>::get(registry_id);
 
-        ensure!(registry.is_some(), Error::<T>::Registry);
+        ensure!(maybe_registry.is_some(), Error::<T>::Registry);
 
         // TODO
     }
