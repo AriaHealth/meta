@@ -95,10 +95,6 @@ default-features = false
 version = '0.0.0'
 path = '../pallets/social-network'
 
-[dependencies.pallet-delivery-network]
-default-features = false
-version = '0.0.0'
-path = '../pallets/delivery-network'
 
 [dependencies.pallet-marketplace]
 default-features = false
@@ -110,23 +106,16 @@ default-features = false
 version = '0.0.0'
 path = '../pallets/meta-registry'
 
-[dependencies.pallet-public-key-registry]
+[dependencies.pallet-key-registry]
 default-features = false
-version = '0.0.0'
-path = '../pallets/public-key-registry'
-
+version = '1.0.0'
+path = '../pallets/key-registry'
 
 # DELETE LATER
 [dependencies.pallet-example-offchain-worker]
 default-features = false
 version = '4.0.0-dev'
 path = '../pallets/x-template-ocw-1'
-
-# DELETE LATER
-[dependencies.pallet-ocw]
-default-features = false
-version = '1.0.0'
-path = '../pallets/x-template-ocw'
 
 
 [dependencies.pallet-randomness-collective-flip]
@@ -259,7 +248,7 @@ std = [
 	'pallet-balances/std',
 	'pallet-example-offchain-worker/std',
 	'pallet-grandpa/std',
-	'pallet-ocw/std',
+	'pallet-key-registry/std',
 	'pallet-social-network/std',
 	'pallet-meta-registry/std',
 	'pallet-randomness-collective-flip/std',

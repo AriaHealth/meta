@@ -41,15 +41,13 @@ use pallet_transaction_payment::CurrencyAdapter;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-pub use pallet_delivery_network;
+pub use pallet_key_registry;
 pub use pallet_marketplace;
 pub use pallet_meta_registry;
-pub use pallet_public_key_registry;
 pub use pallet_social_network;
 
 /// Delete later
 pub use pallet_example_offchain_worker;
-pub use pallet_ocw;
 pub use pallet_template;
 
 /// An index to a block.
@@ -291,10 +289,6 @@ impl pallet_social_network::Config for Runtime {
     type ConnectionRules = ();
 }
 
-impl pallet_delivery_network::Config for Runtime {
-    type Event = Event;
-}
-
 impl pallet_marketplace::Config for Runtime {
     type Event = Event;
 }
@@ -304,19 +298,14 @@ impl pallet_meta_registry::Config for Runtime {
     type IssuerRules = ();
 }
 
-impl pallet_public_key_registry::Config for Runtime {
+impl pallet_key_registry::Config for Runtime {
+    type AuthorityId = pallet_key_registry::crypto::AuthorityId;
+    type Call = Call;
     type Event = Event;
 }
 
 /// Delete later
 impl pallet_template::Config for Runtime {
-    type Event = Event;
-}
-
-// Delete later
-impl pallet_ocw::Config for Runtime {
-    type AuthorityId = pallet_ocw::crypto::TestAuthId;
-    type Call = Call;
     type Event = Event;
 }
 
@@ -413,12 +402,10 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
         SocialNetwork: pallet_social_network::{Pallet, Call, Event<T>},
-        DeliveryNetwork: pallet_delivery_network::{Pallet,Event<T>},
         MetaRegistry: pallet_meta_registry::{Pallet,Event<T>},
-        PublicKeyRegistry: pallet_public_key_registry::{Pallet,Event<T>},
         Marketplace: pallet_marketplace::{Pallet,Event<T>},
         TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
-        OcwDemo: pallet_ocw::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
+        KeyRegistry: pallet_key_registry::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
         OcwExample: pallet_example_offchain_worker::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
     }
 );

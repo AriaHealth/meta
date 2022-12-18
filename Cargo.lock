@@ -3338,13 +3338,11 @@ dependencies = [
  "log",
  "pallet-aura",
  "pallet-balances",
- "pallet-delivery-network",
  "pallet-example-offchain-worker",
  "pallet-grandpa",
+ "pallet-key-registry",
  "pallet-marketplace",
  "pallet-meta-registry",
- "pallet-ocw",
- "pallet-public-key-registry",
  "pallet-randomness-collective-flip",
  "pallet-social-network",
  "pallet-sudo",
@@ -3808,20 +3806,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-delivery-network"
-version = "0.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
-]
-
-[[package]]
 name = "pallet-example-offchain-worker"
 version = "4.0.0-dev"
 dependencies = [
@@ -3873,6 +3857,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-key-registry"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "parking_lot 0.11.2",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-marketplace"
 version = "0.0.0"
 dependencies = [
@@ -3900,39 +3903,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-ocw"
-version = "1.0.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "parking_lot 0.11.2",
- "scale-info",
- "serde",
- "serde_json",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-public-key-registry"
-version = "0.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
 ]
 
 [[package]]
@@ -3978,7 +3948,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-healthcare",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

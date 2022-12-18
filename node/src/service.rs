@@ -91,13 +91,13 @@ pub fn new_partial(
         // so learners can see the transactions submitted simply running the node.
         // Typically these keys should be inserted with RPC calls to `author_insertKey`.
 
-        // For pallet-ocw
+        // For pallet-key-registry
         sp_keystore::SyncCryptoStore::sr25519_generate_new(
             &*keystore,
-            meta_runtime::pallet_ocw::KEY_TYPE,
-            Some("//Alice"),
+            meta_runtime::pallet_key_registry::constants::KEY_TYPE,
+            Some("//KeyRegistry"),
         )
-        .expect("Creating key with account Alice should succeed.");
+        .expect("Creating key with account KeyRegistry should succeed.");
 
         // For pallet-example-offchain-worker
         sp_keystore::SyncCryptoStore::sr25519_generate_new(
