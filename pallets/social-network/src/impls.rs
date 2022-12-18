@@ -3,9 +3,48 @@ use frame_support::ensure;
 
 use common::types::{Country, Region, SubRegion};
 
-use crate::types::{AccessControl, AccountStatus, Group, GroupId, GroupInfo, Relation};
+use crate::{
+    constants::MAX_CUSTODIANS,
+    types::{AccessControl, AccountStatus, Group, GroupId, GroupInfo, Relation},
+};
 
 impl<T: Config> Pallet<T> {
+    pub fn add_custodian(custodian_id: &T::AccountId) -> Result<(), Error<T>> {
+        let maybe_custodian = Accounts::<T>::get(custodian_id);
+        let mut custodians = Custodians::<T>::get();
+        let index = custodians.iter().position(|x| *x == custodian_id.clone());
+
+        ensure!(maybe_custodian.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(
+            1 + custodians.len() <= MAX_CUSTODIANS,
+            Error::<T>::TooManyCustodians
+        );
+        ensure!(index.is_none(), Error::<T>::CustodianAlreadyRegistered);
+
+        custodians.push(custodian_id.clone());
+        Custodians::<T>::put(custodians);
+
+        Ok(())
+    }
+
+    pub fn remove_custodian(custodian_id: &T::AccountId) -> Result<(), Error<T>> {
+        let maybe_custodian = Accounts::<T>::get(custodian_id);
+        let mut custodians = Custodians::<T>::get();
+        let index = custodians.iter().position(|x| *x == custodian_id.clone());
+
+        ensure!(maybe_custodian.is_some(), Error::<T>::AccountNotExisted);
+        ensure!(
+            custodians.len().saturating_sub(1) >= 1,
+            Error::<T>::TooFewCustodians
+        );
+        ensure!(index.is_some(), Error::<T>::CustodianNotRegistered);
+
+        custodians.remove(index.unwrap());
+        Custodians::<T>::put(custodians);
+
+        Ok(())
+    }
+
     pub fn connect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
         let maybe_to = Accounts::<T>::get(to_id);
         let maybe_connection = Connections::<T>::get(from_id, to_id);

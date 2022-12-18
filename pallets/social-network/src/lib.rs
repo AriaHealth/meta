@@ -18,11 +18,12 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use crate::traits::ConnectionRules;
-    use crate::types::{AccessControl, AccountDetail, Group, GroupId, Relation};
-
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use sp_std::vec::Vec;
+
+    use crate::traits::ConnectionRules;
+    use crate::types::{AccessControl, AccountDetail, Group, GroupId, Relation};
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -35,6 +36,10 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
+
+    #[pallet::storage]
+    #[pallet::getter(fn custodians)]
+    pub type Custodians<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn accounts)]
@@ -77,6 +82,10 @@ pub mod pallet {
         OnlyAdminAllowed,
         OnlyPendingAllowed,
         Overflow,
+        TooManyCustodians,
+        TooFewCustodians,
+        CustodianAlreadyRegistered,
+        CustodianNotRegistered,
     }
 
     #[pallet::call]
