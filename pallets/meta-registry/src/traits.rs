@@ -4,12 +4,11 @@ use frame_support::dispatch::DispatchResultWithPostInfo;
 use region::Country;
 use sp_std::vec::Vec;
 
-pub trait IssuerRules<T: Config> {
+pub trait IssuerRules<AccountId> {
   fn can_create(
-    &self,
     registry_id: &RegistryId,
-    owner: &T::AccountId,
-    issuer: &T::AccountId,
+    owner: &AccountId,
+    issuer: &AccountId,
     hash: &RegistryHash,
     info: &RegistryInfo,
     salable: &bool,
@@ -18,10 +17,9 @@ pub trait IssuerRules<T: Config> {
   ) -> bool;
 
   fn on_create(
-    &self,
     registry_id: &RegistryId,
-    owner: &T::AccountId,
-    issuer: &T::AccountId,
+    owner: &AccountId,
+    issuer: &AccountId,
     hash: &RegistryHash,
     info: &RegistryInfo,
     salable: &bool,
@@ -30,10 +28,9 @@ pub trait IssuerRules<T: Config> {
   ) -> DispatchResultWithPostInfo;
 
   fn can_delete(
-    &self,
     registry_id: &RegistryId,
-    owner: &T::AccountId,
-    issuer: &T::AccountId,
+    owner: &AccountId,
+    issuer: &AccountId,
     hash: &RegistryHash,
     info: &RegistryInfo,
     salable: &bool,
@@ -42,10 +39,9 @@ pub trait IssuerRules<T: Config> {
   ) -> bool;
 
   fn on_delete(
-    &self,
     registry_id: &RegistryId,
-    owner: &T::AccountId,
-    issuer: &T::AccountId,
+    owner: &AccountId,
+    issuer: &AccountId,
     hash: &RegistryHash,
     info: &RegistryInfo,
     salable: &bool,
@@ -54,13 +50,12 @@ pub trait IssuerRules<T: Config> {
   ) -> DispatchResultWithPostInfo;
 }
 
-impl<T: Config> IssuerRules<T> for () {
+impl<AccountId> IssuerRules<AccountId> for () {
   #[allow(unused_variables)]
   fn can_create(
-    &self,
     registry_id: &RegistryId,
-    owner: &T::AccountId,
-    issuer: &T::AccountId,
+    owner: &AccountId,
+    issuer: &AccountId,
     hash: &RegistryHash,
     info: &RegistryInfo,
     salable: &bool,
@@ -72,10 +67,9 @@ impl<T: Config> IssuerRules<T> for () {
 
   #[allow(unused_variables)]
   fn on_create(
-    &self,
     registry_id: &RegistryId,
-    owner: &T::AccountId,
-    issuer: &T::AccountId,
+    owner: &AccountId,
+    issuer: &AccountId,
     hash: &RegistryHash,
     info: &RegistryInfo,
     salable: &bool,
@@ -87,10 +81,9 @@ impl<T: Config> IssuerRules<T> for () {
 
   #[allow(unused_variables)]
   fn can_delete(
-    &self,
     registry_id: &RegistryId,
-    owner: &T::AccountId,
-    issuer: &T::AccountId,
+    owner: &AccountId,
+    issuer: &AccountId,
     hash: &RegistryHash,
     info: &RegistryInfo,
     salable: &bool,
@@ -102,10 +95,9 @@ impl<T: Config> IssuerRules<T> for () {
 
   #[allow(unused_variables)]
   fn on_delete(
-    &self,
     registry_id: &RegistryId,
-    owner: &T::AccountId,
-    issuer: &T::AccountId,
+    owner: &AccountId,
+    issuer: &AccountId,
     hash: &RegistryHash,
     info: &RegistryInfo,
     salable: &bool,
