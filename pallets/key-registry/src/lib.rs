@@ -23,7 +23,7 @@ pub mod pallet {
     use sp_std::{collections::vec_deque::VecDeque, prelude::*, str};
 
     use crate::constants::UNSIGNED_TXS_PRIORITY;
-    use crate::types::Payload;
+    use crate::types::{Payload, TeeOracleURI};
 
     impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public> {
         fn public(&self) -> T::Public {
@@ -44,6 +44,10 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
+
+    #[pallet::storage]
+    #[pallet::getter(fn custodians)]
+    pub type TeeOracles<T: Config> = StorageValue<_, Vec<TeeOracleURI>, ValueQuery>;
 
     // The pallet's runtime storage items.
     // https://substrate.dev/docs/en/knowledgebase/runtime/storage

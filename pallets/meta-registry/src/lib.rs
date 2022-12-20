@@ -22,7 +22,9 @@ pub mod pallet {
     use sp_std::vec::Vec;
 
     use crate::traits::IssuerRules;
-    use crate::types::{AccessType, Chunk, ChunkHash, Registry, RegistryId};
+    use crate::types::{
+        AccessType, Chunk, ChunkHash, DeliveryNetwork, DeliveryNetworkId, Registry, RegistryId,
+    };
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -38,13 +40,18 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::storage]
+    #[pallet::getter(fn delivery_networks)]
+    pub type DeliveryNetworks<T: Config> =
+        StorageMap<_, Twox64Concat, DeliveryNetworkId, DeliveryNetwork>;
+
+    #[pallet::storage]
     #[pallet::getter(fn registries)]
     pub type Registries<T: Config> =
         StorageMap<_, Blake2_128Concat, RegistryId, Registry<T::AccountId>>;
 
     #[pallet::storage]
     #[pallet::getter(fn chunks)]
-    pub type Chunks<T: Config> = StorageMap<_, Twox64Concat, ChunkHash, Chunk<T::BlockNumber>>;
+    pub type Chunks<T: Config> = StorageMap<_, Blake2_128Concat, ChunkHash, Chunk<T::BlockNumber>>;
 
     #[pallet::storage]
     #[pallet::getter(fn chunk_block)]
@@ -74,13 +81,17 @@ pub mod pallet {
     // Errors inform users that something went wrong.
     #[pallet::error]
     pub enum Error<T> {
-        NoneValue,
-        StorageOverflow,
-        ChunkNotExisted,
-        RegistryNotExisted,
         ChunkAlreadyExisted,
-        RegistryAlreadyExisted,
+        ChunkNotExisted,
+        DeliveryNetworkAlreadyExisted,
+        DeliveryNetworkNotExisted,
+        NoneValue,
         Overflow,
+        RegistryAlreadyExisted,
+        RegistryNotExisted,
+        RegistrySalable,
+        StorageOverflow,
+        NonAuthorized,
     }
 
     #[pallet::call]

@@ -1,7 +1,12 @@
+use frame_support::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Deserializer};
 use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
+
+use crate::constants::TEE_ORACLE_MAX_URI_LENGTH;
+
+pub type TeeOracleURI = BoundedVec<u8, ConstU32<TEE_ORACLE_MAX_URI_LENGTH>>;
 
 // ref: https://serde.rs/container-attrs.html#crate
 #[derive(Deserialize, Encode, Decode, Default, RuntimeDebug, scale_info::TypeInfo)]

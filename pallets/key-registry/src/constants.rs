@@ -18,3 +18,5 @@ pub const HTTP_REMOTE_REQUEST: &str = "https://hacker-news.firebaseio.com/v0/ite
 pub const FETCH_TIMEOUT_PERIOD: u64 = 3000; // in milli-seconds
 pub const LOCK_TIMEOUT_EXPIRATION: u64 = FETCH_TIMEOUT_PERIOD + 1000; // in milli-seconds
 pub const LOCK_BLOCK_EXPIRATION: u32 = 3; // in block number
+
+pub const TEE_ORACLE_MAX_URI_LENGTH: u32 = 512;
