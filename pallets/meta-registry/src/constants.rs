@@ -1,2 +1,0 @@
-pub const REGISTRY_INFO_MAX_LEN: u32 = 512;
-pub const DELIVERY_NETWORK_MAX_URI_LEN: u32 = 512;

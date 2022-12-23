@@ -1,41 +1,116 @@
-# Substrate Off-chain Worker Demo
+# Frontier
 
-This repository is built based on [Substrate Node Template `v3.0.0+monthly-2021-10`](https://github.com/substrate-developer-hub/substrate-meta/tree/v3.0.0+monthly-2021-10).
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/paritytech/frontier/Rust)](https://github.com/paritytech/frontier/actions)
+[![Matrix](https://img.shields.io/matrix/frontier:matrix.org)](https://matrix.to/#/#frontier:matrix.org)
 
-The purpose is to demonstrate what off-chain worker could do, and how one would go about using it.
+Frontier is Substrate's Ethereum compatibility layer. It allows you to run
+unmodified Ethereum dapps.
 
-### Run
+The goal of Ethereum compatibility layer is to be able to:
 
-1. First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
+* Run a normal web3 application via the compatibility layer, using local nodes,
+  where an extra bridge binary is acceptable.
+* Be able to import state from Ethereum mainnet.
 
-2. To run it, use Rust's native `cargo` command to build and launch the template node:
+## Releases
 
-  ```sh
-  cargo run --release -- --dev --tmp
-  ```
+### Primitives
 
-3. To build it, the `cargo run` command will perform an initial build. Use the following command to
-build the node without launching it:
+Those are suitable to be included in a runtime. Primitives are structures shared
+by higher-level code.
 
-  ```sh
-  cargo build --release
-  ```
+* `fp-consensus`: Consensus layer primitives.
+  ![Crates.io](https://img.shields.io/crates/v/fp-consensus)
+* `fp-evm`: EVM primitives. ![Crates.io](https://img.shields.io/crates/v/fp-evm)
+* `fp-rpc`: RPC primitives. ![Crates.io](https://img.shields.io/crates/v/fp-rpc)
+* `fp-storage`: Well-known storage information.
+  ![Crates.io](https://img.shields.io/crates/v/fp-storage)
 
-Since this repository is based on Substrate Node Template,
-[it's README](https://github.com/substrate-developer-hub/substrate-meta/blob/v3.0.0%2Bmonthly-2021-10/README.md)
-applies to this repository as well.
+### Pallets
 
-### About Off-chain Worker
+Those pallets serve as runtime components for projects using Frontier.
 
-- The core of OCW features are demonstrated in [`pallets-ocw`](./pallets/ocw/src/lib.rs), and
-[`pallets-example-offchain-worker`](./pallets/example-offchain-worker/src/lib.rs).
+* `pallet-evm`: EVM execution handling.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm)
+* `pallet-ethereum`: Ethereum block handling.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-ethereum)
+* `pallet-dynamic-fee`: Extends the fee handling logic so that it can be changed
+  within the runtime.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-dynamic-fee)
 
-  Note that in order for the offchain worker to run, we have injected *Alice* key in
-[`node/service.rs`](node/src/service.rs#L93-L104)
+### EVM Pallet precompiles
 
-- Goto [**docs/README.md**](docs/README.md) to learn more about off-chain worker (extracted from Substrate
-  Recipes, based on Substrate v3).
+Those precompiles can be used together with `pallet-evm` for additional
+functionalities of the EVM executor.
 
-- Review the code of [**Offchain Worker Example Pallet** within Substrate](https://paritytech.github.io/substrate/latest/src/pallet_example_offchain_worker/lib.rs.html#18-709)
-  and its [rustdoc](https://paritytech.github.io/substrate/latest/pallet_example_offchain_worker/).
-  This pallet is also [added in this repository](pallets/example-offchain-worker).
+* `pallet-evm-precompile-simple`: Four basic precompiles in Ethereum EVMs.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-simple)
+* `pallet-evm-precompile-blake2`: BLAKE2 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-blake2)
+* `pallet-evm-precompile-bn128`: BN128 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-bn128)
+* `pallet-evm-precompile-ed25519`: ED25519 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-ed25519)
+* `pallet-evm-precompile-modexp`: MODEXP precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-modexp)
+* `pallet-evm-precompile-sha3fips`: Standard SHA3 precompile.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-sha3fips)
+* `pallet-evm-precompile-dispatch`: Enable interoperability between EVM
+  contracts and other Substrate runtime components.
+  ![Crates.io](https://img.shields.io/crates/v/pallet-evm-precompile-dispatch)
+
+### Client-side libraries
+
+Those are libraries that should be used on client-side to enable RPC, block hash
+mapping, and other features.
+
+* `fc-consensus`: Consensus block import.
+  ![Crates.io](https://img.shields.io/crates/v/fc-consensus)
+* `fc-db`: Frontier-specific database backend.
+  ![Crates.io](https://img.shields.io/crates/v/fc-db)
+* `fc-mapping-sync`: Block hash mapping syncing logic.
+  ![Crates.io](https://img.shields.io/crates/v/fc-mapping-sync)
+* `fc-rpc-core`: Core RPC logic.
+  ![Crates.io](https://img.shields.io/crates/v/fc-rpc-core)
+* `fc-rpc`: RPC implementation.
+  ![Crates.io](https://img.shields.io/crates/v/fc-rpc)
+
+## Development workflow
+
+### Pull request
+
+All changes (except new releases) are handled through pull requests.
+
+### Versioning
+
+Frontier follows [Semantic Versioning](https://semver.org/). An unreleased crate
+in the repository will have the `-dev` suffix in the end, and we do rolling
+releases.
+
+When you make a pull request against this repository, please also update the
+affected crates' versions, using the following rules. Note that the rules should
+be applied recursively -- if a change modifies any upper crate's dependency
+(even just the `Cargo.toml` file), then the upper crate will also need to apply
+those rules.
+
+Additionally, if your change is notable, then you should also modify the
+corresponding `CHANGELOG.md` file, in the "Unreleased" section.
+
+If the affected crate already has `-dev` suffix:
+
+* If your change is a patch, then you do not have to update any versions.
+* If your change introduces a new feature, please check if the local version
+  already had its minor version bumped, if not, bump it.
+* If your change modifies the current interface, please check if the local
+  version already had its major version bumped, if not, bump it.
+
+If the affected crate does not yet have `-dev` suffix:
+
+* If your change is a patch, then bump the patch version, and add `-dev` suffix.
+* If your change introduces a new feature, then bump the minor version, and add
+  `-dev` suffix.
+* If your change modifies the current interface, then bump the major version,
+  and add `-dev` suffix.
+
+If your pull request introduces a new crate, please set its version to
+`1.0.0-dev`.
