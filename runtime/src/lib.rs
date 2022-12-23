@@ -9,25 +9,32 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::Encode;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-  construct_runtime, parameter_types,
-  traits::{KeyOwnerProofSystem, Randomness, StorageInfo},
+  construct_runtime,
+  dispatch::{DispatchClass, GetDispatchInfo},
+  parameter_types,
+  traits::{ConstU8, Get, KeyOwnerProofSystem, Randomness, StorageInfo},
   weights::{
     constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-    IdentityFee, Weight,
+    IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
   },
   StorageValue,
 };
 pub use pallet_balances::Call as BalancesCall;
-/// Delete later
-pub use pallet_example_offchain_worker;
 use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use sp_core::U256;
+use sp_runtime::FixedPointNumber;
+use sp_runtime::Perquintill;
+
 pub use pallet_key_registry;
 pub use pallet_marketplace;
 pub use pallet_meta_registry;
 pub use pallet_social_network;
 pub use pallet_template;
+
+use frame_support::weights::ConstantMultiplier;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
+use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -35,7 +42,7 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
   create_runtime_str, generic, impl_opaque_keys,
-  traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify},
+  traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConstU128, IdentifyAccount, NumberFor, Verify},
   transaction_validity::{TransactionSource, TransactionValidity},
   ApplyExtrinsicResult, MultiSignature, SaturatedConversion,
 };
@@ -63,6 +70,36 @@ pub type Index = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
+
+pub mod currency {
+  use super::Balance;
+  pub const SUPPLY_FACTOR: Balance = 1;
+
+  pub const ARIA: Balance = 1_000_000_000_000_000_000;
+
+  pub const UNITS: Balance = 1_000_000_000_000_000_000;
+
+  pub const EUROS: Balance = UNITS;
+  pub const CENTS: Balance = EUROS / 100;
+  pub const MILLICENTS: Balance = CENTS / 1_000;
+
+  pub const WEI: Balance = 1;
+  pub const KILOWEI: Balance = UNITS / 1_000_000_000_000_000;
+  pub const MEGAWEI: Balance = UNITS / 1_000_000_000_000;
+  pub const GIGAWEI: Balance = UNITS / 1_000_000_000;
+  pub const MICROUNIT: Balance = UNITS / 1_000_000;
+  pub const MILLIUNIT: Balance = UNITS / 1_000;
+  pub const KILOUNIT: Balance = UNITS * 1_000;
+
+  pub const EXISTENSIAL_DEPOSIT: Balance = CENTS;
+  pub const TRANSACTION_BYTE_FEE: Balance = 1 * GIGAWEI * SUPPLY_FACTOR;
+  pub const STORAGE_BYTE_FEE: Balance = 100 * MICROUNIT * SUPPLY_FACTOR;
+  pub const WEIGHT_FEE: Balance = 50 * KILOWEI * SUPPLY_FACTOR;
+
+  pub const fn deposit(items: u32, bytes: u32) -> Balance {
+    (items as Balance) * EUROS + (bytes as Balance) * STORAGE_BYTE_FEE
+  }
+}
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -103,7 +140,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
+  state_version: 0,
 };
+
+/// Maximum weight per block
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
 
 /// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
@@ -111,7 +152,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// up by `pallet_aura` to implement `fn slot_duration()`.
 ///
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
+pub const MILLISECS_PER_BLOCK: u64 = 12000;
 
 // NOTE: Currently it is not possible to change the slot duration after the chain has started.
 //       Attempting to do so will brick block production.
@@ -131,14 +172,63 @@ pub fn native_version() -> NativeVersion {
   }
 }
 
+/// Current approximation of the gas/s consumption considering
+/// EVM execution over compiled WASM (on 4.4Ghz CPU).
+/// Given the 500ms Weight, from which 75% only are used for transactions,
+/// the total EVM execution gas limit is: GAS_PER_SECOND * 0.500 * 0.75 ~= 15_000_000.
+pub const GAS_PER_SECOND: u64 = 40_000_000;
+
+/// Approximate ratio of the amount of Weight per Gas.
+/// u64 works for approximations because Weight is a very small unit compared to gas.
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND.ref_time() / GAS_PER_SECOND;
+
+parameter_types! {
+  pub BlockGasLimit: U256
+    = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
+  /// The portion of the `NORMAL_DISPATCH_RATIO` that we adjust the fees with. Blocks filled less
+  /// than this will decrease the weight and more will increase.
+  pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+  /// The adjustment variable of the runtime. Higher values will cause `TargetBlockFullness` to
+  /// change the fees more rapidly. This low value causes changes to occur slowly over time.
+  pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(3, 100_000);
+  /// Minimum amount of the multiplier. This value cannot be too low. A test case should ensure
+  /// that combined with `AdjustmentVariable`, we can recover from the minimum.
+  /// See `multiplier_can_grow_from_zero` in integration_tests.rs.
+  /// This value is currently only used by pallet-transaction-payment as an assertion that the
+  /// next multiplier is always > min value.
+  pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000u128);
+  /// Maximum multiplier. We pick a value that is expensive but not impossibly so; it should act
+  /// as a safety net.
+  pub MaximumMultiplier: Multiplier = Multiplier::from(100_000u128);
+  pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
+}
+
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+const NORMAL_WEIGHT: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_mul(3).saturating_div(4);
+pub const EXTRINSIC_BASE_WEIGHT: Weight = Weight::from_ref_time(10000 * WEIGHT_PER_GAS);
+
+pub struct RuntimeBlockWeights;
+impl Get<frame_system::limits::BlockWeights> for RuntimeBlockWeights {
+  fn get() -> frame_system::limits::BlockWeights {
+    frame_system::limits::BlockWeights::builder()
+      .for_class(DispatchClass::Normal, |weights| {
+        weights.base_extrinsic = EXTRINSIC_BASE_WEIGHT;
+        weights.max_total = NORMAL_WEIGHT.into();
+      })
+      .for_class(DispatchClass::Operational, |weights| {
+        weights.max_total = MAXIMUM_BLOCK_WEIGHT.into();
+        weights.reserved = (MAXIMUM_BLOCK_WEIGHT - NORMAL_WEIGHT).into();
+      })
+      .avg_block_initialization(Perbill::from_percent(10))
+      .build()
+      .expect("Provided BlockWeight definitions are valid, qed")
+  }
+}
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
     pub const BlockHashCount: BlockNumber = 2400;
-    /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-        ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+    pub BlockWeights: frame_system::limits::BlockWeights = RuntimeBlockWeights::get();
     pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
     pub const SS58Prefix: u8 = 42;
@@ -156,7 +246,7 @@ impl frame_system::Config for Runtime {
   /// The identifier used to distinguish between accounts.
   type AccountId = AccountId;
   /// The aggregated dispatch type that is available for extrinsics.
-  type Call = Call;
+  type RuntimeCall = RuntimeCall;
   /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
   type Lookup = AccountIdLookup<AccountId, ()>;
   /// The index type for storing how many extrinsics an account has signed.
@@ -172,7 +262,7 @@ impl frame_system::Config for Runtime {
   /// The ubiquitous event type.
   type RuntimeEvent = RuntimeEvent;
   /// The ubiquitous origin type.
-  type Origin = Origin;
+  type RuntimeOrigin = RuntimeOrigin;
   /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
   type BlockHashCount = BlockHashCount;
   /// The weight of database operations that the runtime can invoke.
@@ -195,6 +285,7 @@ impl frame_system::Config for Runtime {
   type SS58Prefix = SS58Prefix;
   /// The set code logic, just the default since we're not a parachain.
   type OnSetCode = ();
+  type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -211,16 +302,10 @@ impl pallet_aura::Config for Runtime {
 
 impl pallet_grandpa::Config for Runtime {
   type RuntimeEvent = RuntimeEvent;
-  type Call = Call;
-
   type KeyOwnerProofSystem = ();
-
   type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-
   type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::IdentificationTuple;
-
   type HandleEquivocation = ();
-
   type WeightInfo = ();
   type MaxAuthorities = MaxAuthorities;
 }
@@ -260,16 +345,53 @@ parameter_types! {
     pub const TransactionByteFee: Balance = 1;
 }
 
+pub struct LengthToFee;
+impl WeightToFeePolynomial for LengthToFee {
+  type Balance = Balance;
+
+  fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+    smallvec![
+      WeightToFeeCoefficient {
+        degree: 1,
+        coeff_frac: Perbill::zero(),
+        coeff_integer: currency::TRANSACTION_BYTE_FEE,
+        negative: false,
+      },
+      WeightToFeeCoefficient {
+        degree: 3,
+        coeff_frac: Perbill::zero(),
+        coeff_integer: 1 * currency::SUPPLY_FACTOR,
+        negative: false,
+      },
+    ]
+  }
+}
+
 impl pallet_transaction_payment::Config for Runtime {
+  type RuntimeEvent = RuntimeEvent;
   type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-  type TransactionByteFee = TransactionByteFee;
-  type WeightToFee = IdentityFee<Balance>;
+  type OperationalFeeMultiplier = ConstU8<5>;
+  type WeightToFee = ConstantMultiplier<Balance, ConstU128<1u128>>;
+  type LengthToFee = ConstantMultiplier<Balance, ConstU128<1u128>>;
   type FeeMultiplierUpdate = ();
 }
 
+/// Parameterized slow adjusting fee updated based on
+/// https://w3f-research.readthedocs.io/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism // editorconfig-checker-disable-line
+///
+/// The adjustment algorithm boils down to:
+///
+/// diff = (previous_block_weight - target) / maximum_block_weight
+/// next_multiplier = prev_multiplier * (1 + (v * diff) + ((v * diff)^2 / 2))
+/// assert(next_multiplier > min)
+///     where: v is AdjustmentVariable
+///            target is TargetBlockFullness
+///            min is MinimumMultiplier
+pub type SlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<R, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier, MaximumMultiplier>;
+
 impl pallet_sudo::Config for Runtime {
   type RuntimeEvent = RuntimeEvent;
-  type Call = Call;
+  type RuntimeCall = RuntimeCall;
 }
 
 // Aria pallets configuration
@@ -290,7 +412,7 @@ impl pallet_meta_registry::Config for Runtime {
 
 impl pallet_key_registry::Config for Runtime {
   type AuthorityId = pallet_key_registry::crypto::AuthorityId;
-  type Call = Call;
+  type Call = RuntimeCall;
   type RuntimeEvent = RuntimeEvent;
 }
 
@@ -299,33 +421,16 @@ impl pallet_template::Config for Runtime {
   type RuntimeEvent = RuntimeEvent;
 }
 
-// Delete later
-parameter_types! {
-    pub const GracePeriod: BlockNumber = 3;
-    pub const UnsignedInterval: BlockNumber = 3;
-    pub const UnsignedPriority: BlockNumber = 3;
-}
-
-// Delete later
-impl pallet_example_offchain_worker::Config for Runtime {
-  type AuthorityId = pallet_example_offchain_worker::crypto::TestAuthId;
-  type Call = Call;
-  type RuntimeEvent = RuntimeEvent;
-  type GracePeriod = GracePeriod;
-  type UnsignedInterval = UnsignedInterval;
-  type UnsignedPriority = UnsignedPriority;
-}
-
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
-  Call: From<LocalCall>,
+  RuntimeCall: From<LocalCall>,
 {
   fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-    call: Call,
+    call: RuntimeCall,
     public: <Signature as sp_runtime::traits::Verify>::Signer,
     account: AccountId,
     index: Index,
-  ) -> Option<(Call, <UncheckedExtrinsic as sp_runtime::traits::Extrinsic>::SignaturePayload)> {
+  ) -> Option<(RuntimeCall, <UncheckedExtrinsic as sp_runtime::traits::Extrinsic>::SignaturePayload)> {
     let period = BlockHashCount::get() as u64;
     let current_block = System::block_number().saturated_into::<u64>().saturating_sub(1);
     let tip = 0;
@@ -358,9 +463,9 @@ impl frame_system::offchain::SigningTypes for Runtime {
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 where
-  Call: From<C>,
+  RuntimeCall: From<C>,
 {
-  type OverarchingCall = Call;
+  type OverarchingCall = RuntimeCall;
   type Extrinsic = UncheckedExtrinsic;
 }
 
@@ -371,20 +476,19 @@ construct_runtime!(
         NodeBlock = opaque::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system::{Pallet, Call, Config, Storage, RuntimeEvent<T>},
+        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Aura: pallet_aura::{Pallet, Config<T>},
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, RuntimeEvent},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, RuntimeEvent<T>},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, RuntimeEvent<T>},
-        SocialNetwork: pallet_social_network::{Pallet, Call, RuntimeEvent<T>},
-        MetaRegistry: pallet_meta_registry::{Pallet,RuntimeEvent<T>},
-        Marketplace: pallet_marketplace::{Pallet,RuntimeEvent<T>},
-        TemplateModule: pallet_template::{Pallet, Call, Storage, RuntimeEvent<T>},
-        KeyRegistry: pallet_key_registry::{Pallet, Call, Storage, RuntimeEvent<T>, ValidateUnsigned},
-        OcwExample: pallet_example_offchain_worker::{Pallet, Call, Storage, RuntimeEvent<T>, ValidateUnsigned},
+        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
+        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+        SocialNetwork: pallet_social_network::{Pallet, Call, Event<T>},
+        MetaRegistry: pallet_meta_registry::{Pallet,Event<T>},
+        Marketplace: pallet_marketplace::{Pallet,Event<T>},
+        TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
+        KeyRegistry: pallet_key_registry::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
     }
 );
 
@@ -405,11 +509,11 @@ pub type SignedExtra = (
   pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// The payload being signed in transactions.
-pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
+pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = frame_executive::Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllPallets>;
+pub type Executive = frame_executive::Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllPalletsWithSystem>;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {

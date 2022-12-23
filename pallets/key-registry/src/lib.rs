@@ -1,61 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::Get;
-use frame_system::{
-  self as system,
-  offchain::{
-    AppCrypto, CreateSignedTransaction, SendSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer, SigningTypes, SubmitTransaction,
-  },
-};
-use parity_scale_codec::{Decode, Encode};
 use sp_core::crypto::KeyTypeId;
-use sp_core::sr25519::Signature as Sr25519Signature;
-use sp_runtime::{
-  app_crypto::{app_crypto, sr25519},
-  traits::Verify,
-  MultiSignature, MultiSigner,
-};
-use sp_runtime::{
-  offchain::{
-    http,
-    storage::{MutateStorageError, StorageRetrievalError, StorageValueRef},
-    Duration,
-  },
-  traits::Zero,
-  transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
-  RuntimeDebug,
-};
-use sp_std::prelude::*;
-use sp_std::vec::Vec;
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"krgs");
 
 pub use pallet::*;
 
 pub mod constants;
-pub mod types;
-
+pub mod crypto;
 mod impls;
-
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"krgs");
-
-pub mod crypto {
-
-  app_crypto!(sr25519, KEY_TYPE);
-
-  pub struct AuthorityId;
-  // implemented for runtime
-  impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for AuthorityId {
-    type RuntimeAppPublic = Public;
-    type GenericSignature = sp_core::sr25519::Signature;
-    type GenericPublic = sp_core::sr25519::Public;
-  }
-
-  // implemented for mock runtime in test
-  impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature> for AuthorityId {
-    type RuntimeAppPublic = Public;
-    type GenericSignature = sp_core::sr25519::Signature;
-    type GenericPublic = sp_core::sr25519::Public;
-  }
-}
+pub mod types;
 
 #[frame_support::pallet]
 pub mod pallet {

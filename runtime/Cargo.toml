@@ -17,6 +17,8 @@ git = 'https://github.com/paritytech/substrate.git'
 branch = "polkadot-v0.9.32"
 
 # Dependencies
+[dependencies.smallvec]
+version = "1.8.0"
 
 [dependencies.codec]
 default-features = false
@@ -27,6 +29,34 @@ version = '3.2.1'
 [dependencies.log]
 default-features = false
 version = "0.4.17"
+
+
+# Aria Pallets
+[dependencies.pallet-social-network]
+default-features = false
+version = '0.0.0'
+path = '../pallets/social-network'
+
+
+[dependencies.pallet-marketplace]
+default-features = false
+version = '0.0.0'
+path = '../pallets/marketplace'
+
+[dependencies.pallet-meta-registry]
+default-features = false
+version = '0.0.0'
+path = '../pallets/meta-registry'
+
+[dependencies.pallet-key-registry]
+default-features = false
+version = '1.0.0'
+path = '../pallets/key-registry'
+
+[dependencies.pallet-template]
+default-features = false
+path = '../pallets/x-template-pallet'
+version = '3.0.0-monthly-2021-10'
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/paritytech/substrate.git'
@@ -79,35 +109,6 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = "polkadot-v0.9.32"
 
-# Aria Pallets
-[dependencies.pallet-social-network]
-default-features = false
-version = '0.0.0'
-path = '../pallets/social-network'
-
-
-[dependencies.pallet-marketplace]
-default-features = false
-version = '0.0.0'
-path = '../pallets/marketplace'
-
-[dependencies.pallet-meta-registry]
-default-features = false
-version = '0.0.0'
-path = '../pallets/meta-registry'
-
-[dependencies.pallet-key-registry]
-default-features = false
-version = '1.0.0'
-path = '../pallets/key-registry'
-
-# DELETE LATER
-[dependencies.pallet-example-offchain-worker]
-default-features = false
-version = '0.0.0'
-path = '../pallets/x-template-ocw-1'
-
-
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -117,11 +118,6 @@ branch = "polkadot-v0.9.32"
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 branch = "polkadot-v0.9.32"
-
-[dependencies.pallet-template]
-default-features = false
-path = '../pallets/x-template-pallet'
-version = '3.0.0-monthly-2021-10'
 
 [dependencies.pallet-timestamp]
 default-features = false
@@ -212,6 +208,13 @@ runtime-benchmarks = [
 	'sp-runtime/runtime-benchmarks',
 ]
 std = [
+	# Aria pallet
+	'pallet-key-registry/std',
+	'pallet-social-network/std',
+	'pallet-meta-registry/std',
+	'pallet-template/std',
+
+	# Substrate dependencies
 	'codec/std',
 	'frame-executive/std',
 	'frame-support/std',
@@ -220,14 +223,9 @@ std = [
 	'log/std',
 	'pallet-aura/std',
 	'pallet-balances/std',
-	'pallet-example-offchain-worker/std',
 	'pallet-grandpa/std',
-	'pallet-key-registry/std',
-	'pallet-social-network/std',
-	'pallet-meta-registry/std',
 	'pallet-randomness-collective-flip/std',
 	'pallet-sudo/std',
-	'pallet-template/std',
 	'pallet-timestamp/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-transaction-payment/std',
