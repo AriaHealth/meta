@@ -159,7 +159,7 @@ pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 impl ocw_demo::Config for Runtime {
   type AuthorityId = ocw_demo::crypto::TestAuthId;
   type Call = Call;
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
@@ -360,7 +360,7 @@ construct_runtime!(
     UncheckedExtrinsic = UncheckedExtrinsic
   {
     //...snip
-    OcwDemo: ocw_demo::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+    OcwDemo: ocw_demo::{Module, Call, Storage, RuntimeEvent<T>, ValidateUnsigned},
   }
 );
 ```

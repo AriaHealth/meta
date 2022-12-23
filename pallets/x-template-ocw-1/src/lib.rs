@@ -120,7 +120,7 @@ pub mod pallet {
     type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     /// The overarching dispatch call type.
     type Call: From<Call<Self>>;
@@ -152,6 +152,7 @@ pub mod pallet {
 
   #[pallet::pallet]
   #[pallet::generate_store(pub(super) trait Store)]
+  #[pallet::without_storage_info]
   pub struct Pallet<T>(_);
 
   #[pallet::hooks]
@@ -278,7 +279,7 @@ pub mod pallet {
   #[pallet::event]
   #[pallet::generate_deposit(pub(super) fn deposit_event)]
   pub enum Event<T: Config> {
-    /// Event generated when new price is accepted to contribute to the average.
+    /// RuntimeEvent generated when new price is accepted to contribute to the average.
     /// \[price, who\]
     NewPrice(u32, T::AccountId),
   }

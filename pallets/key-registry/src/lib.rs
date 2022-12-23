@@ -1,12 +1,61 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::traits::Get;
+use frame_system::{
+  self as system,
+  offchain::{
+    AppCrypto, CreateSignedTransaction, SendSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer, SigningTypes, SubmitTransaction,
+  },
+};
+use parity_scale_codec::{Decode, Encode};
+use sp_core::crypto::KeyTypeId;
+use sp_core::sr25519::Signature as Sr25519Signature;
+use sp_runtime::{
+  app_crypto::{app_crypto, sr25519},
+  traits::Verify,
+  MultiSignature, MultiSigner,
+};
+use sp_runtime::{
+  offchain::{
+    http,
+    storage::{MutateStorageError, StorageRetrievalError, StorageValueRef},
+    Duration,
+  },
+  traits::Zero,
+  transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
+  RuntimeDebug,
+};
+use sp_std::prelude::*;
+use sp_std::vec::Vec;
+
 pub use pallet::*;
 
 pub mod constants;
-pub mod crypto;
 pub mod types;
 
 mod impls;
+
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"krgs");
+
+pub mod crypto {
+
+  app_crypto!(sr25519, KEY_TYPE);
+
+  pub struct AuthorityId;
+  // implemented for runtime
+  impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for AuthorityId {
+    type RuntimeAppPublic = Public;
+    type GenericSignature = sp_core::sr25519::Signature;
+    type GenericPublic = sp_core::sr25519::Public;
+  }
+
+  // implemented for mock runtime in test
+  impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature> for AuthorityId {
+    type RuntimeAppPublic = Public;
+    type GenericSignature = sp_core::sr25519::Signature;
+    type GenericPublic = sp_core::sr25519::Public;
+  }
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -31,7 +80,7 @@ pub mod pallet {
   #[pallet::config]
   pub trait Config: frame_system::Config + CreateSignedTransaction<Call<Self>> {
     /// The overarching event type.
-    type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     /// The overarching dispatch call type.
     type Call: From<Call<Self>>;
     /// The identifier type for an offchain worker.
@@ -40,6 +89,7 @@ pub mod pallet {
 
   #[pallet::pallet]
   #[pallet::generate_store(pub(super) trait Store)]
+  #[pallet::without_storage_info]
   pub struct Pallet<T>(_);
 
   #[pallet::storage]

@@ -17,8 +17,8 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
+        System: frame_system::{Pallet, Call, Config, Storage, RuntimeEvent<T>},
+        TemplateModule: pallet_template::{Pallet, Call, Storage, RuntimeEvent<T>},
     }
 );
 
@@ -41,7 +41,7 @@ impl system::Config for Test {
   type AccountId = u64;
   type Lookup = IdentityLookup<Self::AccountId>;
   type Header = Header;
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type BlockHashCount = BlockHashCount;
   type Version = ();
   type PalletInfo = PalletInfo;
@@ -54,7 +54,7 @@ impl system::Config for Test {
 }
 
 impl pallet_template::Config for Test {
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
 }
 
 // Build genesis storage according to the mock runtime.

@@ -42,8 +42,8 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Example: example_offchain_worker::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
+        System: frame_system::{Pallet, Call, Config, Storage, RuntimeEvent<T>},
+        Example: example_offchain_worker::{Pallet, Call, Storage, RuntimeEvent<T>, ValidateUnsigned},
     }
 );
 
@@ -66,7 +66,7 @@ impl frame_system::Config for Test {
   type AccountId = sp_core::sr25519::Public;
   type Lookup = IdentityLookup<Self::AccountId>;
   type Header = Header;
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type BlockHashCount = BlockHashCount;
   type Version = ();
   type PalletInfo = PalletInfo;
@@ -115,7 +115,7 @@ parameter_types! {
 }
 
 impl Config for Test {
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type AuthorityId = crypto::TestAuthId;
   type Call = Call;
   type GracePeriod = GracePeriod;

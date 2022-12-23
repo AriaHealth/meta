@@ -170,7 +170,7 @@ impl frame_system::Config for Runtime {
   /// The header type.
   type Header = generic::Header<BlockNumber, BlakeTwo256>;
   /// The ubiquitous event type.
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   /// The ubiquitous origin type.
   type Origin = Origin;
   /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
@@ -210,7 +210,7 @@ impl pallet_aura::Config for Runtime {
 }
 
 impl pallet_grandpa::Config for Runtime {
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type Call = Call;
 
   type KeyOwnerProofSystem = ();
@@ -249,7 +249,7 @@ impl pallet_balances::Config for Runtime {
   /// The type for recording an account's balance.
   type Balance = Balance;
   /// The ubiquitous event type.
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type DustRemoval = ();
   type ExistentialDeposit = ExistentialDeposit;
   type AccountStore = System;
@@ -268,35 +268,35 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 impl pallet_sudo::Config for Runtime {
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type Call = Call;
 }
 
 // Aria pallets configuration
 
 impl pallet_social_network::Config for Runtime {
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type ConnectionRules = ();
 }
 
 impl pallet_marketplace::Config for Runtime {
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_meta_registry::Config for Runtime {
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type IssuerRules = ();
 }
 
 impl pallet_key_registry::Config for Runtime {
   type AuthorityId = pallet_key_registry::crypto::AuthorityId;
   type Call = Call;
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
 }
 
 /// Delete later
 impl pallet_template::Config for Runtime {
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
 }
 
 // Delete later
@@ -310,7 +310,7 @@ parameter_types! {
 impl pallet_example_offchain_worker::Config for Runtime {
   type AuthorityId = pallet_example_offchain_worker::crypto::TestAuthId;
   type Call = Call;
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type GracePeriod = GracePeriod;
   type UnsignedInterval = UnsignedInterval;
   type UnsignedPriority = UnsignedPriority;
@@ -371,20 +371,20 @@ construct_runtime!(
         NodeBlock = opaque::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system::{Pallet, Call, Config, Storage, RuntimeEvent<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Aura: pallet_aura::{Pallet, Config<T>},
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, RuntimeEvent},
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, RuntimeEvent<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        SocialNetwork: pallet_social_network::{Pallet, Call, Event<T>},
-        MetaRegistry: pallet_meta_registry::{Pallet,Event<T>},
-        Marketplace: pallet_marketplace::{Pallet,Event<T>},
-        TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
-        KeyRegistry: pallet_key_registry::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
-        OcwExample: pallet_example_offchain_worker::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
+        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, RuntimeEvent<T>},
+        SocialNetwork: pallet_social_network::{Pallet, Call, RuntimeEvent<T>},
+        MetaRegistry: pallet_meta_registry::{Pallet,RuntimeEvent<T>},
+        Marketplace: pallet_marketplace::{Pallet,RuntimeEvent<T>},
+        TemplateModule: pallet_template::{Pallet, Call, Storage, RuntimeEvent<T>},
+        KeyRegistry: pallet_key_registry::{Pallet, Call, Storage, RuntimeEvent<T>, ValidateUnsigned},
+        OcwExample: pallet_example_offchain_worker::{Pallet, Call, Storage, RuntimeEvent<T>, ValidateUnsigned},
     }
 );
 
@@ -579,7 +579,7 @@ impl_runtime_apis! {
                 hex_literal::hex!("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80").to_vec().into(),
                 // Execution Phase
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
-                // Event Count
+                // RuntimeEvent Count
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
                 // System Events
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),

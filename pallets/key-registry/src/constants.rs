@@ -7,7 +7,7 @@ use sp_core::crypto::KeyTypeId;
 /// When an offchain worker is signing transactions it's going to request keys from type
 /// `KeyTypeId` via the keystore to sign the transaction.
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"krgs");
+
 pub const NUM_VEC_LEN: usize = 10;
 /// The type to sign and send transactions.
 pub const UNSIGNED_TXS_PRIORITY: u64 = 100;

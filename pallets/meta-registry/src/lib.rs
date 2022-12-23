@@ -27,13 +27,14 @@ pub mod pallet {
   #[pallet::config]
   pub trait Config: frame_system::Config {
     /// Because this pallet emits events, it depends on the runtime's definition of an event.
-    type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     type IssuerRules: IssuerRules<Self::AccountId>;
   }
 
   #[pallet::pallet]
   #[pallet::generate_store(pub(super) trait Store)]
+  #[pallet::without_storage_info]
   pub struct Pallet<T>(_);
 
   #[pallet::storage]
@@ -61,7 +62,7 @@ pub mod pallet {
   #[pallet::event]
   #[pallet::generate_deposit(pub(super) fn deposit_event)]
   pub enum Event<T: Config> {
-    /// Event documentation should end with an array that provides descriptive names for event
+    /// RuntimeEvent documentation should end with an array that provides descriptive names for event
     /// parameters. [something, who]
     SomethingStored(u32, T::AccountId),
   }
