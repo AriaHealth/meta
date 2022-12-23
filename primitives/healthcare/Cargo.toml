@@ -1,10 +1,10 @@
 [package]
-name = 'region'
+name = 'healthcare'
 version = '0.0.0'
 description = 'Pallet for storing meta information'
 authors = ['Aria Health <https://github.com/AriaHealth>']
 homepage = 'https://myaria.health'
-edition = '2018'
+edition = '2021'
 license = 'Unlicense'
 publish = false
 repository = 'https://github.com/AriaHealth/meta'
