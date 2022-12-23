@@ -24,40 +24,35 @@ features = ['derive']
 version = "2.3.0"
 
 [dependencies.frame-benchmarking]
-branch = "master"
+branch = "polkadot-v0.9.36"
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 optional = true
-version = '4.0.0-dev'
 
 [dependencies.frame-support]
-branch = "master"
+branch = "polkadot-v0.9.36"
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 
 [dependencies.frame-system]
-branch = "master"
+branch = "polkadot-v0.9.36"
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-version = '4.0.0-dev'
 
 [dev-dependencies.sp-core]
-branch = "master"
+branch = "polkadot-v0.9.36"
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-version = "7.0.0"
 
 [dev-dependencies.sp-io]
-branch = "master"
+branch = "polkadot-v0.9.36"
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-version = "7.0.0"
 
 [dev-dependencies.sp-runtime]
-branch = "master"
+branch = "polkadot-v0.9.36"
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-version = "7.0.0"
 
 [features]
 default = ['std']

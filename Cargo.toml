@@ -24,7 +24,7 @@ members = [
 	"primitives/evm",
 	"primitives/rpc",
 	"primitives/self-contained",
-	"blockchain/node",
-	"blockchain/runtime",
+	"meta/node",
+	"meta/runtime",
 ]
 resolver = "2"
