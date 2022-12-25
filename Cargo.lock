@@ -3383,8 +3383,10 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
+ "pallet-key-registry",
  "pallet-meta-registry",
  "pallet-randomness-collective-flip",
+ "pallet-social-network",
  "pallet-sudo",
  "pallet-template",
  "pallet-timestamp",
@@ -3870,6 +3872,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-key-registry"
+version = "4.0.0-dev"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-meta-registry"
 version = "4.0.0-dev"
 dependencies = [
@@ -3919,6 +3938,23 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-trie",
+]
+
+[[package]]
+name = "pallet-social-network"
+version = "4.0.0-dev"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

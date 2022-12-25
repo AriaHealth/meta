@@ -1,5 +1,5 @@
 use sp_core::crypto::KeyTypeId;
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"mtrg");
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"kyrg");
 
 use sp_application_crypto::{app_crypto, sr25519};
 use sp_core::sr25519::Signature as Sr25519Signature;

@@ -40,8 +40,9 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+pub use pallet_key_registry;
 pub use pallet_meta_registry;
-/// Import the template pallet.
+pub use pallet_social_network;
 pub use pallet_template;
 
 /// An index to a block.
@@ -281,6 +282,18 @@ impl pallet_meta_registry::Config for Runtime {
   type MyRandomness = RandomnessCollectiveFlip;
 }
 
+impl pallet_key_registry::Config for Runtime {
+  type RuntimeEvent = RuntimeEvent;
+  type AuthorityId = pallet_key_registry::crypto::TestAuthId;
+  type MyRandomness = RandomnessCollectiveFlip;
+}
+
+impl pallet_social_network::Config for Runtime {
+  type RuntimeEvent = RuntimeEvent;
+  type AuthorityId = pallet_social_network::crypto::TestAuthId;
+  type MyRandomness = RandomnessCollectiveFlip;
+}
+
 impl frame_system::offchain::SigningTypes for Runtime {
   type Public = <Signature as sp_runtime::traits::Verify>::Signer;
   type Signature = Signature;
@@ -349,6 +362,8 @@ construct_runtime!(
     // Include the custom logic from the pallet-template in the runtime.
     TemplateModule: pallet_template,
     MetaRegistry: pallet_meta_registry,
+    KeyRegistry: pallet_key_registry,
+    SocialNetwork: pallet_social_network,
   }
 );
 
