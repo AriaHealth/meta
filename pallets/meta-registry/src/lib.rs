@@ -1,6 +1,3 @@
-// Only for template pallet. Delete the warning surpressors if you are not using template pallet.
-#![allow(unused_variables)]
-#![allow(unused_imports)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 /// Edit this file to define custom logic or remove it if it is not needed.
@@ -26,21 +23,16 @@ pub mod pallet {
   use crate::types::Payload;
   use frame_support::{pallet_prelude::*, traits::Randomness};
   use frame_system::{
-    offchain::{
-      AppCrypto, CreateSignedTransaction, SendSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer, SigningTypes, SubmitTransaction,
-    },
+    offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SubmitTransaction},
     pallet_prelude::*,
   };
   use sp_runtime::{
     offchain::{
-      storage::StorageValueRef,
       storage_lock::{BlockAndTime, StorageLock},
       Duration,
     },
-    traits::BlockNumberProvider,
     transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
   };
-  use sp_std::vec::Vec;
 
   #[pallet::pallet]
   #[pallet::generate_store(pub(super) trait Store)]
@@ -98,29 +90,18 @@ pub mod pallet {
 
       if let Ok(_guard) = lock.try_lock() {
         // Unsigned transaction with unsigned payload
-        // let number: u64 = block_number.try_into().unwrap_or(0);
+        let number: u64 = block_number.try_into().unwrap_or(0);
 
-        // log::info!("Hello from pallet-ocw.");
+        log::info!("Hello from pallet-meta-registry.");
 
-        // let call =
-        // 	Call::do_something { block_number, something: number.try_into().unwrap_or(0) };
+        let call = Call::do_something {
+          block_number,
+          something: number.try_into().unwrap_or(0),
+        };
 
-        // SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
-        // 	.map_err(|()| "Unable to submit unsigned transaction.")
-        // 	.ok();
-
-        // Unsigned transaction with signed payload
-        let number: u32 = block_number.try_into().unwrap_or(0);
-
-        Signer::<T, T::AuthorityId>::any_account().send_unsigned_transaction(
-          |account| Payload {
-            number,
-            block_number,
-            public: account.public.clone(),
-            account_id: account.id.clone(),
-          },
-          |payload, signature| Call::do_something_with_signature { signature, payload },
-        );
+        SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
+          .map_err(|()| "Unable to submit unsigned transaction.")
+          .ok();
       };
     }
   }
@@ -146,7 +127,7 @@ pub mod pallet {
             .propagate(true)
             .build()
         }
-      } else if let Call::do_something { block_number, something } = call {
+      } else if let Call::do_something { block_number, something: _ } = call {
         ValidTransaction::with_tag_prefix("ExampleOffchainWorker")
           .priority(random_value.encode()[0].into())
           .and_provides(block_number)
