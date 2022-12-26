@@ -3951,7 +3951,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-key-registry"
-version = "4.0.0-dev"
+version = "0.0.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
@@ -3968,7 +3968,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-meta-registry"
-version = "4.0.0-dev"
+version = "0.0.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
@@ -4020,7 +4020,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-social-network"
-version = "4.0.0-dev"
+version = "0.0.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
@@ -4051,7 +4051,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-template"
-version = "4.0.0-dev"
+version = "0.0.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
