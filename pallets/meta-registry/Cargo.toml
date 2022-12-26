@@ -20,6 +20,8 @@ scale-info = { version = "2.1.1", default-features = false, features = [
 	"derive",
 ] }
 log = { default-features = false, version = "0.4.17" }
+ap-region = { default-features = false, path = "../../primitives/region" }
+
 
 frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", "branch" = "polkadot-v0.9.36" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", "branch" = "polkadot-v0.9.36" }

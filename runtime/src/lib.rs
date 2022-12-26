@@ -279,7 +279,6 @@ impl pallet_template::Config for Runtime {
 impl pallet_meta_registry::Config for Runtime {
   type RuntimeEvent = RuntimeEvent;
   type AuthorityId = pallet_meta_registry::crypto::TestAuthId;
-  type MyRandomness = RandomnessCollectiveFlip;
 }
 
 impl pallet_key_registry::Config for Runtime {

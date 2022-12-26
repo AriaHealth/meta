@@ -3912,6 +3912,7 @@ dependencies = [
 name = "pallet-meta-registry"
 version = "0.0.0"
 dependencies = [
+ "ap-region",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
