@@ -290,6 +290,7 @@ impl pallet_key_registry::Config for Runtime {
 
 impl pallet_social_network::Config for Runtime {
   type RuntimeEvent = RuntimeEvent;
+  type ConnectionRules = ();
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {

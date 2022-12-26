@@ -1,5 +1,5 @@
 [package]
-name = 'region'
+name = 'ap-region'
 version = '0.0.0'
 description = 'Pallet for storing meta information'
 authors = ['Aria Health <https://github.com/AriaHealth>']
@@ -21,8 +21,7 @@ version = '3.0.0'
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'master'
-
+branch = "polkadot-v0.9.36"
 
 [dependencies.scale-info]
 default-features = false
@@ -32,8 +31,7 @@ version = '2.1.1'
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-branch = 'master'
-
+branch = "polkadot-v0.9.36"
 
 [features]
 default = ['std']

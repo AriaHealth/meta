@@ -1,6 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 pub use pallet::*;
 
+mod constants;
+mod impls;
+mod traits;
+mod types;
+
 #[cfg(test)]
 mod mock;
 
@@ -14,8 +19,13 @@ mod benchmarking;
 pub mod pallet {
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
+  use sp_std::vec::Vec;
+
+  use crate::traits::ConnectionRules;
+  use crate::types::{AccessControl, AccountDetail, Group, GroupId, Relation};
 
   #[pallet::pallet]
+  #[pallet::without_storage_info]
   #[pallet::generate_store(pub(super) trait Store)]
   pub struct Pallet<T>(_);
 
@@ -23,15 +33,28 @@ pub mod pallet {
   #[pallet::config]
   pub trait Config: frame_system::Config {
     type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+    type ConnectionRules: ConnectionRules<Self::AccountId>;
   }
 
   #[pallet::storage]
-  #[pallet::getter(fn something)]
-  pub type Something<T> = StorageValue<_, u32>;
+  #[pallet::getter(fn custodians)]
+  pub type Custodians<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
   #[pallet::storage]
-  #[pallet::getter(fn nonce)]
-  pub type Nonce<T> = StorageValue<_, u32>;
+  #[pallet::getter(fn accounts)]
+  pub type Accounts<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AccountDetail<T::AccountId>>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn connections)]
+  pub type Connections<T: Config> = StorageDoubleMap<_, Twox64Concat, T::AccountId, Twox64Concat, T::AccountId, Relation>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn groups)]
+  pub type Groups<T: Config> = StorageMap<_, Twox64Concat, GroupId, Group<T::AccountId>>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn group_members)]
+  pub type AccessControls<T: Config> = StorageDoubleMap<_, Twox64Concat, GroupId, Twox64Concat, T::AccountId, AccessControl>;
 
   #[pallet::event]
   #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -42,8 +65,23 @@ pub mod pallet {
   // Errors inform users that something went wrong.
   #[pallet::error]
   pub enum Error<T> {
-    NoneValue,
-    StorageOverflow,
+    AccountNotExisted,
+    AccountNotLive,
+    AlreadyConnected,
+    AlreadyConnecting,
+    AlreadyJoined,
+    AlreadyJoining,
+    GroupAlreadyExisted,
+    GroupNotExisted,
+    NeverConnecting,
+    NeverJoining,
+    OnlyAdminAllowed,
+    OnlyPendingAllowed,
+    Overflow,
+    TooManyCustodians,
+    TooFewCustodians,
+    CustodianAlreadyRegistered,
+    CustodianNotRegistered,
   }
 
   #[pallet::call]
@@ -51,35 +89,12 @@ pub mod pallet {
     #[pallet::call_index(0)]
     #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
     pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
-      ensure_none(origin)?;
-
-      // Update storage.
-      <Something<T>>::put(something);
+      let creator_id = ensure_signed(origin)?;
 
       // Emit an event.
       Self::deposit_event(Event::SomethingStored { something });
       // Return a successful DispatchResultWithPostInfo
       Ok(())
-    }
-
-    /// An example dispatchable that may throw a custom error.
-    #[pallet::call_index(1)]
-    #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
-    pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-      let _who = ensure_signed(origin)?;
-
-      // Read a value from storage.
-      match <Something<T>>::get() {
-        // Return an error if the value has not been set.
-        None => return Err(Error::<T>::NoneValue.into()),
-        Some(old) => {
-          // Increment the value read from storage; will error in the event of overflow.
-          let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-          // Update the value in storage with the incremented result.
-          <Something<T>>::put(new);
-          Ok(())
-        },
-      }
     }
   }
 }
