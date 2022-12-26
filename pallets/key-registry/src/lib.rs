@@ -1,13 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://docs.substrate.io/reference/frame-pallets/>
+pub use pallet::*;
+
 pub mod crypto;
+
+mod constants;
 mod impls;
 mod types;
-
-pub use pallet::*;
 
 #[cfg(test)]
 mod mock;
@@ -20,8 +19,7 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-  use crate::types::Payload;
-  use frame_support::{pallet_prelude::*, traits::Randomness};
+  use frame_support::pallet_prelude::*;
   use frame_system::{
     offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SubmitTransaction},
     pallet_prelude::*,
@@ -33,20 +31,25 @@ pub mod pallet {
     },
     transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
   };
+  use sp_std::vec::Vec;
+
+  use crate::types::{Payload, TeeOracleURI};
 
   #[pallet::pallet]
+  #[pallet::without_storage_info]
   #[pallet::generate_store(pub(super) trait Store)]
   pub struct Pallet<T>(_);
 
-  /// Configure the pallet by specifying the parameters and types on which it depends.
   #[pallet::config]
   pub trait Config: CreateSignedTransaction<Call<Self>> + frame_system::Config {
-    /// Because this pallet emits events, it depends on the runtime's definition of an event.
     type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
-    type MyRandomness: Randomness<Self::Hash, Self::BlockNumber>;
   }
+
+  #[pallet::storage]
+  #[pallet::getter(fn custodians)]
+  pub type TeeOracles<T: Config> = StorageValue<_, Vec<TeeOracleURI>, ValueQuery>;
 
   // The pallet's runtime storage items.
   // https://docs.substrate.io/main-docs/build/runtime-storage/
@@ -55,10 +58,6 @@ pub mod pallet {
   // Learn more about declaring storage items:
   // https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
   pub type Something<T> = StorageValue<_, u32>;
-
-  #[pallet::storage]
-  #[pallet::getter(fn nonce)]
-  pub type Nonce<T> = StorageValue<_, u32>;
 
   // Pallets use events to inform users when important changes are made.
   // https://docs.substrate.io/main-docs/build/events-errors/
@@ -92,7 +91,7 @@ pub mod pallet {
         // Unsigned transaction with unsigned payload
         let number: u64 = block_number.try_into().unwrap_or(0);
 
-        log::info!("Hello from pallet-meta-registry.");
+        log::info!("Hello from pallet-key-registry.");
 
         let call = Call::do_something {
           block_number,
@@ -111,25 +110,9 @@ pub mod pallet {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-      let nonce = Self::get_and_increment_nonce();
-      let (random_value, _) = T::MyRandomness::random(&nonce);
-
-      if let Call::do_something_with_signature { signature, payload } = call {
-        let signature_valid = SignedPayload::<T>::verify::<T::AuthorityId>(payload, signature.clone());
-
-        if !signature_valid {
-          InvalidTransaction::Call.into()
-        } else {
-          ValidTransaction::with_tag_prefix("ExampleOffchainWorker")
-            .priority(random_value.encode()[0].into())
-            .and_provides(&payload.block_number)
-            .longevity(1)
-            .propagate(true)
-            .build()
-        }
-      } else if let Call::do_something { block_number, something: _ } = call {
+      if let Call::do_something { block_number, something: _ } = call {
         ValidTransaction::with_tag_prefix("ExampleOffchainWorker")
-          .priority(random_value.encode()[0].into())
+          .priority(3)
           .and_provides(block_number)
           .longevity(5)
           .propagate(true)
@@ -160,50 +143,6 @@ pub mod pallet {
 
       // Emit an event.
       Self::deposit_event(Event::SomethingStored { something });
-      // Return a successful DispatchResultWithPostInfo
-      Ok(())
-    }
-
-    /// An example dispatchable that may throw a custom error.
-    #[pallet::call_index(1)]
-    #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
-    pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-      let _who = ensure_signed(origin)?;
-
-      // Read a value from storage.
-      match <Something<T>>::get() {
-        // Return an error if the value has not been set.
-        None => return Err(Error::<T>::NoneValue.into()),
-        Some(old) => {
-          // Increment the value read from storage; will error in the event of overflow.
-          let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-          // Update the value in storage with the incremented result.
-          <Something<T>>::put(new);
-          Ok(())
-        },
-      }
-    }
-
-    #[pallet::call_index(2)]
-    #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-    pub fn do_something_with_signature(
-      origin: OriginFor<T>,
-      _signature: T::Signature,
-      payload: Payload<T::Public, T::BlockNumber, T::AccountId>,
-    ) -> DispatchResult {
-      // Check that the extrinsic was signed and get the signer.
-      // This function will return an error if the extrinsic is not signed.
-      // https://docs.substrate.io/main-docs/build/origins/
-      ensure_none(origin)?;
-
-      // Update storage.
-      <Something<T>>::put(payload.number.clone());
-
-      // Emit an event.
-      Self::deposit_event(Event::SomethingStoredSigned {
-        something: payload.number.clone(),
-        account_id: payload.account_id.clone(),
-      });
       // Return a successful DispatchResultWithPostInfo
       Ok(())
     }

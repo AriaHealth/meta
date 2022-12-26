@@ -8,14 +8,6 @@ use frame_system::offchain::{SignedPayload, SigningTypes};
 use sp_runtime::traits::BlockNumberProvider;
 use sp_std::vec::Vec;
 
-impl<T: Config> Pallet<T> {
-  pub fn get_and_increment_nonce() -> Vec<u8> {
-    let nonce = Nonce::<T>::get().unwrap_or(0);
-    Nonce::<T>::put(nonce.wrapping_add(1));
-    nonce.encode()
-  }
-}
-
 impl<T: Config> BlockNumberProvider for Pallet<T> {
   type BlockNumber = T::BlockNumber;
 
