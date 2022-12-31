@@ -123,6 +123,7 @@ dependencies = [
  "frame-support",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-std",
 ]
 
@@ -3355,6 +3356,7 @@ dependencies = [
  "futures",
  "jsonrpsee",
  "meta-runtime",
+ "pallet-meta-registry",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",

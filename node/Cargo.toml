@@ -54,6 +54,9 @@ sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", "br
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate.git", "branch" = "polkadot-v0.9.36" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate.git", "branch" = "polkadot-v0.9.36" }
 
+# Aria pallets
+pallet-meta-registry = { version = "0.0.0", default-features = false, path = "../pallets/meta-registry" }
+
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", "branch" = "polkadot-v0.9.36" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", "branch" = "polkadot-v0.9.36" }

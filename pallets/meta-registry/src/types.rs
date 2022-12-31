@@ -15,7 +15,6 @@ pub struct Payload<Public, BlockNumber, AcountId> {
   pub number: u32,
 }
 
-pub type DeliveryNetworkId = BoundedVec<u8, ConstU32<64>>;
 pub type RegistryId = BoundedVec<u8, ConstU32<64>>;
 pub type RegistryInfo = BoundedVec<u8, ConstU32<REGISTRY_INFO_MAX_LEN>>;
 pub type RegistryHash = [u8; 32];
@@ -28,6 +27,7 @@ pub enum Accessibility {
   New,
   Healthy,
   Broken,
+  Deleted,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo, MaxEncodedLen, Copy)]
@@ -42,18 +42,20 @@ pub enum AccessType {
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct DeliveryNetwork {
   pub uri: DeliveryNetworkURI,
-  pub country: Option<Country>,
-  pub region: Option<Region>,
-  pub sub_region: Option<SubRegion>,
+  pub country: Country,
+  pub region: Region,
+  pub sub_region: SubRegion,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct Registry<AccountId> {
-  pub delivery_network_id: DeliveryNetworkId,
+  pub delivery_network_id: AccountId,
   pub owner_id: AccountId,
   pub issuer_id: AccountId,
+  pub author_id: AccountId,
   pub hash: RegistryHash,
   pub info: RegistryInfo,
+  pub status: Accessibility,
   pub salable: bool,
   pub country: Country,
   pub region: Region,

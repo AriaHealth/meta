@@ -2,10 +2,10 @@
 
 pub mod crypto;
 
-mod constants;
+pub mod constants;
 mod impls;
-mod traits;
-mod types;
+pub mod traits;
+pub mod types;
 
 pub use pallet::*;
 
@@ -20,7 +20,8 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-  use crate::types::{AccessType, Chunk, ChunkHash, DeliveryNetwork, DeliveryNetworkId, Registry, RegistryId};
+  use crate::types::{AccessType, Chunk, ChunkHash, DeliveryNetwork, DeliveryNetworkURI, Registry, RegistryId};
+  use ap_region::{Country, CountryTrait, Region, SubRegion};
   use frame_support::pallet_prelude::*;
   use frame_system::{
     offchain::{AppCrypto, CreateSignedTransaction, SubmitTransaction},
@@ -49,13 +50,45 @@ pub mod pallet {
     type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
   }
 
-  #[pallet::storage]
-  #[pallet::getter(fn something)]
-  pub type Something<T> = StorageValue<_, u32>;
+  #[pallet::genesis_config]
+  pub struct GenesisConfig<T: Config> {
+    pub delivery_network_uri: Option<DeliveryNetworkURI>,
+    pub delivery_network_id: Option<T::AccountId>,
+  }
+
+  #[cfg(feature = "std")]
+  impl<T: Config> Default for GenesisConfig<T> {
+    fn default() -> Self {
+      Self {
+        delivery_network_uri: None,
+        delivery_network_id: None,
+      }
+    }
+  }
+
+  #[pallet::genesis_build]
+  impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    fn build(&self) {
+      if self.delivery_network_uri.is_some() && self.delivery_network_id.is_some() {
+        let delivery_network_uri = self.delivery_network_uri.clone().unwrap();
+        let delivery_network_id = self.delivery_network_id.clone().unwrap();
+
+        DeliveryNetworks::<T>::insert(
+          delivery_network_id,
+          DeliveryNetwork {
+            uri: delivery_network_uri,
+            country: Country::Germany,
+            region: Region::of_country(Country::Germany),
+            sub_region: SubRegion::of_country(Country::Germany),
+          },
+        );
+      }
+    }
+  }
 
   #[pallet::storage]
   #[pallet::getter(fn delivery_networks)]
-  pub type DeliveryNetworks<T: Config> = StorageMap<_, Twox64Concat, DeliveryNetworkId, DeliveryNetwork>;
+  pub type DeliveryNetworks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, DeliveryNetwork>;
 
   #[pallet::storage]
   #[pallet::getter(fn registries)]
@@ -158,9 +191,6 @@ pub mod pallet {
       // This function will return an error if the extrinsic is not signed.
       // https://docs.substrate.io/main-docs/build/origins/
       ensure_none(origin)?;
-
-      // Update storage.
-      <Something<T>>::put(something);
 
       // Emit an event.
       Self::deposit_event(Event::SomethingStored { something });
