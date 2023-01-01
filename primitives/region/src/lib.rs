@@ -3,10 +3,9 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
 use sp_std::cmp::{Eq, PartialEq};
 
-#[derive(Clone, Encode, Decode, Deserialize, Serialize, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[repr(u16)]
 pub enum Country {
   Afghanistan,
@@ -260,7 +259,7 @@ pub enum Country {
   Zimbabwe,
 }
 
-#[derive(Clone, Encode, Decode, Deserialize, Serialize, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum Region {
   Africa,
   Americas,
@@ -270,7 +269,7 @@ pub enum Region {
   Antarctica,
 }
 
-#[derive(Clone, Encode, Decode, Deserialize, Serialize, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum SubRegion {
   AustraliaAndNewZealand,
   CentralAsia,

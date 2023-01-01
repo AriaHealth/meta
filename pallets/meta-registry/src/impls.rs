@@ -14,13 +14,18 @@ impl<T: Config> Pallet<T> {
   pub fn create_delivery_network(
     delivery_network_id: &T::AccountId,
     uri: &DeliveryNetworkURI,
-    country: &Country,
-    region: &Region,
-    sub_region: &SubRegion,
+    country: &Option<Country>,
+    region: &Option<Region>,
+    sub_region: &Option<SubRegion>,
   ) -> Result<(), Error<T>> {
     ensure!(
       !DeliveryNetworks::<T>::contains_key(delivery_network_id),
       Error::<T>::DeliveryNetworkAlreadyExisted
+    );
+
+    ensure!(
+      country.is_some() || region.is_some() || sub_region.is_some(),
+      Error::<T>::NoLocationSpecified
     );
 
     DeliveryNetworks::<T>::insert(

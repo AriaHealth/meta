@@ -77,9 +77,9 @@ pub mod pallet {
           delivery_network_id,
           DeliveryNetwork {
             uri: delivery_network_uri,
-            country: Country::Germany,
-            region: Region::of_country(Country::Germany),
-            sub_region: SubRegion::of_country(Country::Germany),
+            country: None,
+            region: Some(Region::Europe),
+            sub_region: None,
           },
         );
       }
@@ -133,6 +133,7 @@ pub mod pallet {
     RegistrySalable,
     StorageOverflow,
     NonAuthorized,
+    NoLocationSpecified,
   }
 
   #[pallet::hooks]

@@ -42,9 +42,9 @@ pub enum AccessType {
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct DeliveryNetwork {
   pub uri: DeliveryNetworkURI,
-  pub country: Country,
-  pub region: Region,
-  pub sub_region: SubRegion,
+  pub country: Option<Country>,
+  pub region: Option<Region>,
+  pub sub_region: Option<SubRegion>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
