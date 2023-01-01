@@ -145,6 +145,9 @@ pub mod pallet {
 
     /// New registry created
     RegistryCreated { registry_id: RegistryId, issuer_id: T::AccountId },
+
+    /// A registry updated
+    RegistryUpdated { registry_id: RegistryId, author_id: T::AccountId },
   }
 
   // Errors inform users that something went wrong.
@@ -246,7 +249,7 @@ pub mod pallet {
 
     #[pallet::call_index(1)]
     #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-    pub fn register_delivery_network(
+    pub fn create_delivery_network(
       origin: OriginFor<T>,
       delivery_network_id: T::AccountId,
       delivery_network_uri: DeliveryNetworkURI,
@@ -258,7 +261,7 @@ pub mod pallet {
 
       ensure!(T::CustodianRules::is_authorized(&author_id), Error::<T>::NonAuthorized);
 
-      Self::create_delivery_network(&delivery_network_id, &delivery_network_uri, &country, &region, &sub_region)?;
+      Self::do_create_delivery_network(&delivery_network_id, &delivery_network_uri, &country, &region, &sub_region)?;
 
       Self::deposit_event(Event::DeliveryNetworkRegistered {
         delivery_network_id,
@@ -298,7 +301,7 @@ pub mod pallet {
         Error::<T>::NonAuthorized
       );
 
-      Self::add_registry(
+      Self::do_create_registry(
         &registry_id,
         &owner_id,
         &issuer_id,
@@ -311,7 +314,50 @@ pub mod pallet {
         &chunk_hashes,
       )?;
 
+      T::IssuerRules::on_create(
+        &registry_id,
+        &owner_id,
+        &issuer_id,
+        &author_id,
+        &hash,
+        &info,
+        &country,
+        &delivery_network_id,
+        &chunk_hashes,
+      );
       Self::deposit_event(Event::RegistryCreated { registry_id, issuer_id });
+
+      Ok(())
+    }
+
+    #[pallet::call_index(3)]
+    #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+    pub fn set_salable(origin: OriginFor<T>, registry_id: RegistryId, salable: bool) -> DispatchResult {
+      let author_id = ensure_signed(origin)?;
+
+      let maybe_registry = Registries::<T>::get(registry_id.clone());
+      ensure!(maybe_registry.is_some(), Error::<T>::RegistryNotExisted);
+
+      let registry = maybe_registry.unwrap();
+      ensure!(
+        T::IssuerRules::can_update(
+          &registry_id,
+          &registry.owner_id,
+          &registry.issuer_id,
+          &author_id,
+          &registry.hash,
+          &registry.info,
+          &registry.salable,
+          &registry.country,
+          &registry.delivery_network_id,
+          &registry.chunk_hashes
+        ),
+        Error::<T>::NonAuthorized
+      );
+
+      Self::do_set_salable(&registry_id, &salable)?;
+
+      Self::deposit_event(Event::RegistryUpdated { registry_id, author_id });
 
       Ok(())
     }

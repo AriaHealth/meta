@@ -31,7 +31,7 @@ use crate::types::RegistryId;
 use crate::types::RegistryInfo;
 
 impl<T: Config> Pallet<T> {
-  pub fn create_delivery_network(
+  pub fn do_create_delivery_network(
     delivery_network_id: &T::AccountId,
     uri: &DeliveryNetworkURI,
     country: &Option<Country>,
@@ -61,7 +61,7 @@ impl<T: Config> Pallet<T> {
     Ok(())
   }
 
-  pub fn add_registry(
+  pub fn do_create_registry(
     registry_id: &RegistryId,
     owner_id: &T::AccountId,
     issuer_id: &T::AccountId,
@@ -122,7 +122,7 @@ impl<T: Config> Pallet<T> {
     Ok(())
   }
 
-  pub fn set_salable(registry_id: &RegistryId, salable: &bool) -> Result<(), Error<T>> {
+  pub fn do_set_salable(registry_id: &RegistryId, salable: &bool) -> Result<(), Error<T>> {
     Registries::<T>::try_mutate(registry_id, |maybe_registry| {
       let mut registry = maybe_registry.take().ok_or(Error::<T>::RegistryNotExisted)?;
 
@@ -136,7 +136,7 @@ impl<T: Config> Pallet<T> {
     Ok(())
   }
 
-  pub fn remove_registry(registry_id: &RegistryId, actor_id: &T::AccountId) -> Result<(), Error<T>> {
+  pub fn do_remove_registry(registry_id: &RegistryId, actor_id: &T::AccountId) -> Result<(), Error<T>> {
     let maybe_registry = Registries::<T>::get(registry_id);
     ensure!(maybe_registry.is_some(), Error::<T>::RegistryNotExisted);
 

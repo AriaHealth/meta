@@ -35,7 +35,33 @@ pub trait IssuerRules<AccountId> {
     country: &Country,
     delivery_network_id: &AccountId,
     chunk_hashes: &Vec<ChunkHash>,
-  ) -> DispatchResultWithPostInfo;
+  );
+
+  fn can_update(
+    registry_id: &RegistryId,
+    owner_id: &AccountId,
+    issuer_id: &AccountId,
+    author_id: &AccountId,
+    hash: &RegistryHash,
+    info: &RegistryInfo,
+    salable: &bool,
+    country: &Country,
+    delivery_network_id: &AccountId,
+    chunk_hashes: &Vec<ChunkHash>,
+  ) -> bool;
+
+  fn on_update(
+    registry_id: &RegistryId,
+    owner_id: &AccountId,
+    issuer_id: &AccountId,
+    author_id: &AccountId,
+    hash: &RegistryHash,
+    info: &RegistryInfo,
+    salable: &bool,
+    country: &Country,
+    delivery_network_id: &AccountId,
+    chunk_hashes: &Vec<ChunkHash>,
+  );
 
   fn can_delete(
     registry_id: &RegistryId,
@@ -61,7 +87,7 @@ pub trait IssuerRules<AccountId> {
     country: &Country,
     delivery_network_id: &AccountId,
     chunk_hashes: &Vec<ChunkHash>,
-  ) -> DispatchResultWithPostInfo;
+  );
 }
 
 pub trait URLTrait {
@@ -108,12 +134,44 @@ impl<AccountId> IssuerRules<AccountId> for () {
     country: &Country,
     delivery_network_id: &AccountId,
     chunk_hashes: &Vec<ChunkHash>,
-  ) -> DispatchResultWithPostInfo {
-    Ok(().into())
+  ) {
+    // do nothing
   }
 
   #[allow(unused_variables)]
   fn can_delete(
+    registry_id: &RegistryId,
+    owner_id: &AccountId,
+    issuer_id: &AccountId,
+    author_id: &AccountId,
+    hash: &RegistryHash,
+    info: &RegistryInfo,
+    salable: &bool,
+    country: &Country,
+    delivery_network_id: &AccountId,
+    chunk_hashes: &Vec<ChunkHash>,
+  ) -> bool {
+    true
+  }
+
+  #[allow(unused_variables)]
+  fn on_update(
+    registry_id: &RegistryId,
+    owner_id: &AccountId,
+    issuer_id: &AccountId,
+    author_id: &AccountId,
+    hash: &RegistryHash,
+    info: &RegistryInfo,
+    salable: &bool,
+    country: &Country,
+    delivery_network_id: &AccountId,
+    chunk_hashes: &Vec<ChunkHash>,
+  ) {
+    // do nothing
+  }
+
+  #[allow(unused_variables)]
+  fn can_update(
     registry_id: &RegistryId,
     owner_id: &AccountId,
     issuer_id: &AccountId,
@@ -140,7 +198,7 @@ impl<AccountId> IssuerRules<AccountId> for () {
     country: &Country,
     delivery_network_id: &AccountId,
     chunk_hashes: &Vec<ChunkHash>,
-  ) -> DispatchResultWithPostInfo {
-    Ok(().into())
+  ) {
+    // do nothing
   }
 }
