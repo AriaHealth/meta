@@ -20,20 +20,32 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-  use crate::types::{AccessType, Chunk, ChunkHash, DeliveryNetwork, DeliveryNetworkURI, Registry, RegistryId};
-  use ap_region::{Country, CountryTrait, Region, SubRegion};
+  use crate::constants::OFFCHAIN_WORKER_TASKS;
+  use crate::traits::CustodianRules;
+  use crate::traits::IssuerRules;
+  use crate::types::AccessType;
+  use crate::types::Accessibility;
+  use crate::types::Chunk;
+  use crate::types::ChunkHash;
+  use crate::types::ChunkId;
+  use crate::types::DeliveryNetwork;
+  use crate::types::DeliveryNetworkURI;
+  use crate::types::Registry;
+  use crate::types::RegistryId;
+  use ap_region::Country;
+  use ap_region::Region;
+  use ap_region::SubRegion;
   use frame_support::pallet_prelude::*;
-  use frame_system::{
-    offchain::{AppCrypto, CreateSignedTransaction, SubmitTransaction},
-    pallet_prelude::*,
-  };
-  use sp_runtime::{
-    offchain::{
-      storage_lock::{BlockAndTime, StorageLock},
-      Duration,
-    },
-    transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
-  };
+  use frame_system::offchain::AppCrypto;
+  use frame_system::offchain::CreateSignedTransaction;
+  use frame_system::offchain::SubmitTransaction;
+  use frame_system::pallet_prelude::*;
+  use sp_runtime::offchain::storage_lock::BlockAndTime;
+  use sp_runtime::offchain::storage_lock::StorageLock;
+  use sp_runtime::offchain::Duration;
+  use sp_runtime::transaction_validity::InvalidTransaction;
+  use sp_runtime::transaction_validity::TransactionValidity;
+  use sp_runtime::transaction_validity::ValidTransaction;
   use sp_std::vec::Vec;
 
   #[pallet::pallet]
@@ -48,6 +60,8 @@ pub mod pallet {
     type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+    type IssuerRules: IssuerRules<Self::AccountId>;
+    type CustodianRules: CustodianRules<Self::AccountId>;
   }
 
   #[pallet::genesis_config]
@@ -82,6 +96,7 @@ pub mod pallet {
             sub_region: None,
           },
         );
+        CurrentChunkBlockNumber::<T>::put(T::BlockNumber::from(0u32));
       }
     }
   }
@@ -96,27 +111,29 @@ pub mod pallet {
 
   #[pallet::storage]
   #[pallet::getter(fn chunks)]
-  pub type Chunks<T: Config> = StorageMap<_, Blake2_128Concat, ChunkHash, Chunk<T::BlockNumber>>;
+  pub type Chunks<T: Config> = StorageMap<_, Blake2_128Concat, ChunkId, Chunk<T::BlockNumber>>;
 
   #[pallet::storage]
   #[pallet::getter(fn chunk_block)]
-  pub type ChunkBlock<T: Config> = StorageMap<_, Twox64Concat, T::BlockNumber, Vec<ChunkHash>>;
+  pub type ChunkBlock<T: Config> = StorageMap<_, Twox64Concat, T::BlockNumber, Vec<ChunkId>>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn current_chunk_block)]
+  pub type CurrentChunkBlockNumber<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn accesses)]
   pub type Accesses<T: Config> = StorageDoubleMap<_, Blake2_128Concat, RegistryId, Blake2_128Concat, T::AccountId, AccessType>;
 
-  // Pallets use events to inform users when important changes are made.
-  // https://docs.substrate.io/main-docs/build/events-errors/
   #[pallet::event]
   #[pallet::generate_deposit(pub(super) fn deposit_event)]
   pub enum Event<T: Config> {
-    /// Event documentation should end with an array that provides descriptive names for event
-    /// parameters. [something, who]
-    SomethingStored { something: u32 },
-    /// Event documentation should end with an array that provides descriptive names for event
-    /// parameters. [something, who]
-    SomethingStoredSigned { something: u32, account_id: T::AccountId },
+    /// Chunk has been inspected
+    ChunkInspected {
+      chunk_id: ChunkId,
+      status: Accessibility,
+      next_block_number: T::BlockNumber,
+    },
 
     /// New delivery network registered
     DeliveryNetworkRegistered {
@@ -140,28 +157,37 @@ pub mod pallet {
     StorageOverflow,
     NonAuthorized,
     NoLocationSpecified,
+    ChunkBlockNotExisted,
   }
 
   #[pallet::hooks]
   impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
     fn offchain_worker(block_number: T::BlockNumber) {
       // Locking mechanism
-      let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(b"offchain-demo::lock", 3, Duration::from_millis(6000));
+      let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(b"mtrg::lock", 3, Duration::from_millis(6000));
 
       if let Ok(_guard) = lock.try_lock() {
         // Unsigned transaction with unsigned payload
         let number: u64 = block_number.try_into().unwrap_or(0);
 
-        log::info!("Hello from pallet-meta-registry.");
+        log::info!("{:?}::{:?}::starting...", crate::crypto::KEY_NAME, block_number);
 
-        let call = Call::do_something {
-          block_number,
-          something: number.try_into().unwrap_or(0),
-        };
+        let call: Call<T>;
+        match number % OFFCHAIN_WORKER_TASKS {
+          1 | _ => {
+            call = Call::inspect_chunk {
+              block_number,
+              maybe_chunk_id: None,
+              maybe_status: None,
+            };
+          },
+        }
 
         SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
           .map_err(|()| "Unable to submit unsigned transaction.")
           .ok();
+
+        log::info!("{:?}::{:?}::finished...", crate::crypto::KEY_NAME, block_number);
       };
     }
   }
@@ -171,8 +197,8 @@ pub mod pallet {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-      if let Call::do_something { block_number, something: _ } = call {
-        ValidTransaction::with_tag_prefix("ExampleOffchainWorker")
+      if let Call::inspect_chunk { block_number, .. } = call {
+        ValidTransaction::with_tag_prefix("mtrg::inspect_chunk")
           .priority(3)
           .and_provides(block_number)
           .longevity(5)
@@ -184,24 +210,32 @@ pub mod pallet {
     }
   }
 
-  // Dispatchable functions allows users to interact with the pallet and invoke state changes.
-  // These functions materialize as "extrinsics", which are often compared to transactions.
-  // Dispatchable functions must be annotated with a weight and must return a DispatchResult.
   #[pallet::call]
   impl<T: Config> Pallet<T> {
-    /// An example dispatchable that takes a singles value as a parameter, writes the value to
-    /// storage and emits an event. This function must be dispatched by a signed extrinsic.
     #[pallet::call_index(0)]
     #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-    pub fn do_something(origin: OriginFor<T>, _block_number: T::BlockNumber, something: u32) -> DispatchResult {
-      // Check that the extrinsic was signed and get the signer.
-      // This function will return an error if the extrinsic is not signed.
-      // https://docs.substrate.io/main-docs/build/origins/
+    pub fn inspect_chunk(
+      origin: OriginFor<T>,
+      block_number: T::BlockNumber,
+      maybe_chunk_id: Option<ChunkId>,
+      maybe_status: Option<Accessibility>,
+    ) -> DispatchResult {
       ensure_none(origin)?;
+      ensure!(maybe_chunk_id.is_some() && maybe_status.is_some(), Error::<T>::NoneValue);
 
-      // Emit an event.
-      Self::deposit_event(Event::SomethingStored { something });
-      // Return a successful DispatchResultWithPostInfo
+      let chunk_id = maybe_chunk_id.unwrap();
+      let status = maybe_status.unwrap();
+      ensure!(Self::chunks(chunk_id.clone()).is_some(), Error::<T>::ChunkNotExisted);
+
+      Self::update_chunk(&chunk_id, &block_number, &status);
+      let next_block_number = Self::move_chunk_block(&chunk_id)?;
+
+      Self::deposit_event(Event::ChunkInspected {
+        chunk_id,
+        status,
+        next_block_number,
+      });
+
       Ok(())
     }
 
@@ -209,18 +243,17 @@ pub mod pallet {
     #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
     pub fn register_delivery_network(
       origin: OriginFor<T>,
-      delivery_network_id: AccountId,
+      delivery_network_id: T::AccountId,
       delivery_network_uri: DeliveryNetworkURI,
       country: Option<Country>,
       region: Option<Region>,
       sub_region: Option<SubRegion>,
-    ) {
+    ) -> DispatchResult {
       let author_id = ensure_signed(origin)?;
-      let maybe_delivery_network = DeliveryNetworks::<T>::get(author_id.clone());
 
-      ensure!(maybe_delivery_network.is_some(), Error::<T>::NonAuthorized);
+      ensure!(T::CustodianRules::is_authorized(&author_id), Error::<T>::NonAuthorized);
 
-      Self::create_delivery_network(delivery_network_id, uri, &country, &region, &sub_region)?;
+      Self::create_delivery_network(&delivery_network_id, &delivery_network_uri, &country, &region, &sub_region)?;
 
       Self::deposit_event(Event::DeliveryNetworkRegistered {
         delivery_network_id,

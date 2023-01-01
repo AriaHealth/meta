@@ -4,6 +4,11 @@ use sp_std::vec::Vec;
 
 use crate::types::{ChunkHash, RegistryHash, RegistryId, RegistryInfo};
 
+// traits
+pub trait CustodianRules<AccountId> {
+  fn is_authorized(account: &AccountId) -> bool;
+}
+
 pub trait IssuerRules<AccountId> {
   fn can_create(
     registry_id: &RegistryId,
@@ -48,6 +53,23 @@ pub trait IssuerRules<AccountId> {
     country: &Country,
     chunk_hashes: &Vec<ChunkHash>,
   ) -> DispatchResultWithPostInfo;
+}
+
+pub trait URLTrait {
+  fn is_valid(&self) -> bool;
+}
+
+pub trait CombinedKey<K1, K2, R> {
+  fn generate(k1: &K1, k2: &K2) -> R;
+  fn decompose(&self) -> (K1, K2);
+}
+
+// blank implementation
+
+impl<AccountId> CustodianRules<AccountId> for () {
+  fn is_authorized(account: &AccountId) -> bool {
+    true
+  }
 }
 
 impl<AccountId> IssuerRules<AccountId> for () {
@@ -106,8 +128,4 @@ impl<AccountId> IssuerRules<AccountId> for () {
   ) -> DispatchResultWithPostInfo {
     Ok(().into())
   }
-}
-
-pub trait URLTrait {
-  fn is_valid(&self) -> bool;
 }

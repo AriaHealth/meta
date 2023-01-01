@@ -1,9 +1,13 @@
+use sp_application_crypto::app_crypto;
+use sp_application_crypto::sr25519;
 use sp_core::crypto::KeyTypeId;
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"mtrg");
-
-use sp_application_crypto::{app_crypto, sr25519};
 use sp_core::sr25519::Signature as Sr25519Signature;
-use sp_runtime::{traits::Verify, MultiSignature, MultiSigner};
+use sp_runtime::traits::Verify;
+use sp_runtime::MultiSignature;
+use sp_runtime::MultiSigner;
+
+pub const KEY_NAME: &[u8; 4] = b"mtrg";
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*KEY_NAME);
 
 app_crypto!(sr25519, KEY_TYPE);
 

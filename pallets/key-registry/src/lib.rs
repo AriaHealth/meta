@@ -93,14 +93,14 @@ pub mod pallet {
 
         log::info!("Hello from pallet-key-registry.");
 
-        let call = Call::do_something {
-          block_number,
-          something: number.try_into().unwrap_or(0),
-        };
+        // let call = Call::do_something {
+        //   block_number,
+        //   something: number.try_into().unwrap_or(0),
+        // };
 
-        SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
-          .map_err(|()| "Unable to submit unsigned transaction.")
-          .ok();
+        // SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
+        //   .map_err(|()| "Unable to submit unsigned transaction.")
+        //   .ok();
       };
     }
   }

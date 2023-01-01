@@ -2,3 +2,4 @@ max_width = 150
 tab_spaces = 2
 comment_width = 150
 match_block_trailing_comma = true
+imports_granularity = "Item"

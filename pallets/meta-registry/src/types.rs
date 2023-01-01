@@ -15,10 +15,11 @@ pub struct Payload<Public, BlockNumber, AcountId> {
   pub number: u32,
 }
 
-pub type RegistryId = BoundedVec<u8, ConstU32<64>>;
+pub type RegistryId = [u8; 12];
 pub type RegistryInfo = BoundedVec<u8, ConstU32<REGISTRY_INFO_MAX_LEN>>;
 pub type RegistryHash = [u8; 32];
 pub type ChunkHash = [u8; 32];
+pub type ChunkId = [u8; 44]; // RegistryId + ChunkHash
 
 pub type DeliveryNetworkURI = BoundedVec<u8, ConstU32<DELIVERY_NETWORK_MAX_URI_LEN>>;
 
@@ -66,7 +67,6 @@ pub struct Registry<AccountId> {
 
 #[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 pub struct Chunk<BlockNumber> {
-  pub registry_id: RegistryId,
   pub last_block: BlockNumber,
   pub status: Accessibility,
 }

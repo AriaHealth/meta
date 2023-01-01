@@ -110,17 +110,17 @@ pub mod pallet {
         // 	.ok();
 
         // Unsigned transaction with signed payload
-        let number: u32 = block_number.try_into().unwrap_or(0);
+        // let number: u32 = block_number.try_into().unwrap_or(0);
 
-        Signer::<T, T::AuthorityId>::any_account().send_unsigned_transaction(
-          |account| Payload {
-            number,
-            block_number,
-            public: account.public.clone(),
-            account_id: account.id.clone(),
-          },
-          |payload, signature| Call::do_something_with_signature { signature, payload },
-        );
+        // Signer::<T, T::AuthorityId>::any_account().send_unsigned_transaction(
+        //   |account| Payload {
+        //     number,
+        //     block_number,
+        //     public: account.public.clone(),
+        //     account_id: account.id.clone(),
+        //   },
+        //   |payload, signature| Call::do_something_with_signature { signature, payload },
+        // );
       };
     }
   }
