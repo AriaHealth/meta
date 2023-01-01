@@ -89,7 +89,7 @@ pub mod pallet {
     #[pallet::call_index(0)]
     #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
     pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
-      let creator_id = ensure_signed(origin)?;
+      let _creator_id = ensure_signed(origin)?;
 
       // Emit an event.
       Self::deposit_event(Event::SomethingStored { something });

@@ -85,10 +85,7 @@ pub mod pallet {
   #[pallet::genesis_build]
   impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
     fn build(&self) {
-      if self.delivery_network_uri.is_some() && self.delivery_network_id.is_some() {
-        let delivery_network_uri = self.delivery_network_uri.clone().unwrap();
-        let delivery_network_id = self.delivery_network_id.clone().unwrap();
-
+      if let (Some(delivery_network_uri), Some(delivery_network_id)) = (self.delivery_network_uri.clone(), self.delivery_network_id.clone()) {
         DeliveryNetworks::<T>::insert(
           delivery_network_id,
           DeliveryNetwork {
@@ -124,6 +121,10 @@ pub mod pallet {
   pub type CurrentChunkBlockNumber<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
 
   #[pallet::storage]
+  #[pallet::getter(fn pending_deleted_registry)]
+  pub type PendingDeletionRegistries<T: Config> = StorageValue<_, Vec<RegistryId>, ValueQuery>;
+
+  #[pallet::storage]
   #[pallet::getter(fn accesses)]
   pub type Accesses<T: Config> = StorageDoubleMap<_, Blake2_128Concat, RegistryId, Blake2_128Concat, T::AccountId, AccessType>;
 
@@ -148,6 +149,9 @@ pub mod pallet {
 
     /// A registry updated
     RegistryUpdated { registry_id: RegistryId, author_id: T::AccountId },
+
+    /// A registry deleted
+    RegistryDeleted { registry_id: RegistryId, author_id: T::AccountId },
   }
 
   // Errors inform users that something went wrong.
@@ -167,6 +171,7 @@ pub mod pallet {
     NonAuthorized,
     NoLocationSpecified,
     ChunkBlockNotExisted,
+    RegistryNotDeleted,
   }
 
   #[pallet::hooks]
@@ -181,20 +186,30 @@ pub mod pallet {
 
         log::info!("{:?}::{:?}::starting...", crate::crypto::KEY_NAME, block_number);
 
-        let call: Call<T>;
+        let mut call: Option<Call<T>> = None;
         match number % OFFCHAIN_WORKER_TASKS {
+          0 => {
+            if PendingDeletionRegistries::<T>::decode_len().unwrap_or(0) > 0 {
+              let registry_id = PendingDeletionRegistries::<T>::get()[0];
+              call = Some(Call::ocw_background_delete_registry { registry_id });
+            }
+          },
           1 | _ => {
-            call = Call::inspect_chunk {
+            // TODO: fetch chunk and compare hash
+
+            call = Some(Call::ocw_update_chunk {
               block_number,
               maybe_chunk_id: None,
               maybe_status: None,
-            };
+            });
           },
         }
 
-        SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
-          .map_err(|()| "Unable to submit unsigned transaction.")
-          .ok();
+        if let Some(call) = call {
+          SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
+            .map_err(|()| "Unable to submit unsigned transaction.")
+            .ok();
+        }
 
         log::info!("{:?}::{:?}::finished...", crate::crypto::KEY_NAME, block_number);
       };
@@ -206,7 +221,7 @@ pub mod pallet {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-      if let Call::inspect_chunk { block_number, .. } = call {
+      if let Call::ocw_update_chunk { block_number, .. } = call {
         ValidTransaction::with_tag_prefix("mtrg::inspect_chunk")
           .priority(3)
           .and_provides(block_number)
@@ -223,7 +238,7 @@ pub mod pallet {
   impl<T: Config> Pallet<T> {
     #[pallet::call_index(0)]
     #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-    pub fn inspect_chunk(
+    pub fn ocw_update_chunk(
       origin: OriginFor<T>,
       block_number: T::BlockNumber,
       maybe_chunk_id: Option<ChunkId>,
@@ -234,7 +249,7 @@ pub mod pallet {
 
       let chunk_id = maybe_chunk_id.unwrap();
       let status = maybe_status.unwrap();
-      ensure!(Self::chunks(chunk_id.clone()).is_some(), Error::<T>::ChunkNotExisted);
+      ensure!(Self::chunks(chunk_id).is_some(), Error::<T>::ChunkNotExisted);
 
       Self::update_chunk(&chunk_id, &block_number, &status)?;
       let next_block_number = Self::update_chunk_block(&chunk_id)?;
@@ -313,13 +328,13 @@ pub mod pallet {
     pub fn set_salable(origin: OriginFor<T>, registry_id: RegistryId, salable: bool) -> DispatchResult {
       let author_id = ensure_signed(origin)?;
 
-      let maybe_registry = Registries::<T>::get(registry_id.clone());
+      let maybe_registry = Registries::<T>::get(registry_id);
       ensure!(maybe_registry.is_some(), Error::<T>::RegistryNotExisted);
 
       let old_registry = maybe_registry.unwrap();
 
       let mut new_registry = old_registry.clone();
-      new_registry.salable = salable.clone();
+      new_registry.salable = salable;
 
       ensure!(old_registry.salable != new_registry.salable, Error::<T>::NoChanges);
       ensure!(
@@ -331,6 +346,41 @@ pub mod pallet {
 
       T::IssuerRules::on_update(&new_registry, &author_id);
       Self::deposit_event(Event::RegistryUpdated { registry_id, author_id });
+
+      Ok(())
+    }
+
+    #[pallet::call_index(4)]
+    #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+    pub fn delete_registry(origin: OriginFor<T>, registry_id: RegistryId) -> DispatchResult {
+      let author_id = ensure_signed(origin)?;
+
+      let maybe_registry = Registries::<T>::get(registry_id);
+      ensure!(maybe_registry.is_some(), Error::<T>::RegistryNotExisted);
+
+      let registry = maybe_registry.unwrap();
+      ensure!(T::IssuerRules::can_delete(&registry, &author_id), Error::<T>::NonAuthorized);
+
+      Self::do_delete_registry(&registry_id, &author_id)?;
+
+      T::IssuerRules::on_delete(&registry, &author_id);
+      Self::deposit_event(Event::RegistryDeleted { registry_id, author_id });
+
+      Ok(())
+    }
+
+    #[pallet::call_index(5)]
+    #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+    pub fn ocw_background_delete_registry(origin: OriginFor<T>, registry_id: RegistryId) -> DispatchResult {
+      ensure_none(origin)?;
+
+      let maybe_registry = Registries::<T>::get(registry_id);
+      ensure!(maybe_registry.is_some(), Error::<T>::RegistryNotExisted);
+
+      let registry = maybe_registry.unwrap();
+      ensure!(registry.status == Accessibility::Deleted, Error::<T>::RegistryNotDeleted);
+
+      Self::background_delete_registry(&registry_id, &registry);
 
       Ok(())
     }

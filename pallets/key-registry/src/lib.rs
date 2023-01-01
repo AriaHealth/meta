@@ -21,7 +21,7 @@ mod benchmarking;
 pub mod pallet {
   use frame_support::pallet_prelude::*;
   use frame_system::{
-    offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SubmitTransaction},
+    offchain::{AppCrypto, CreateSignedTransaction},
     pallet_prelude::*,
   };
   use sp_runtime::{
@@ -33,7 +33,7 @@ pub mod pallet {
   };
   use sp_std::vec::Vec;
 
-  use crate::types::{Payload, TeeOracleURI};
+  use crate::types::{TeeOracleURI};
 
   #[pallet::pallet]
   #[pallet::without_storage_info]
@@ -89,7 +89,7 @@ pub mod pallet {
 
       if let Ok(_guard) = lock.try_lock() {
         // Unsigned transaction with unsigned payload
-        let number: u64 = block_number.try_into().unwrap_or(0);
+        let _number: u64 = block_number.try_into().unwrap_or(0);
 
         log::info!("Hello from pallet-key-registry.");
 

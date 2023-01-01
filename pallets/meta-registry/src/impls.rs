@@ -1,14 +1,6 @@
 use super::pallet::*;
-use ap_region::Country;
-use ap_region::CountryTrait;
-use ap_region::Region;
-use ap_region::SubRegion;
-use frame_support::ensure;
-use frame_system::offchain::SignedPayload;
-use frame_system::offchain::SigningTypes;
-use sp_runtime::traits::BlockNumberProvider;
-use sp_std::vec::Vec;
 use crate::constants::CHUNK_BLOCK_HEIGHT;
+use crate::constants::CLEAR_PREFIX_BATCH_SIZE;
 use crate::traits::CombinedKey;
 use crate::types::AccessType;
 use crate::types::Accessibility;
@@ -22,6 +14,15 @@ use crate::types::Registry;
 use crate::types::RegistryHash;
 use crate::types::RegistryId;
 use crate::types::RegistryInfo;
+use ap_region::Country;
+use ap_region::CountryTrait;
+use ap_region::Region;
+use ap_region::SubRegion;
+use frame_support::ensure;
+use frame_system::offchain::SignedPayload;
+use frame_system::offchain::SigningTypes;
+use sp_runtime::traits::BlockNumberProvider;
+use sp_std::vec::Vec;
 
 impl<T: Config> Pallet<T> {
   pub fn do_create_delivery_network(
@@ -90,18 +91,18 @@ impl<T: Config> Pallet<T> {
       )
     }
 
-    Accesses::<T>::insert(registry_id.clone(), issuer_id.clone(), AccessType::Issuer);
-    Accesses::<T>::insert(registry_id.clone(), owner_id.clone(), AccessType::Owner);
+    Accesses::<T>::insert(*registry_id, issuer_id.clone(), AccessType::Issuer);
+    Accesses::<T>::insert(*registry_id, owner_id.clone(), AccessType::Owner);
 
     let registry = Registry {
       delivery_network_id: delivery_network_id.clone(),
       owner_id: owner_id.clone(),
       issuer_id: issuer_id.clone(),
       author_id: author_id.clone(),
-      hash: hash.clone(),
+      hash: *hash,
       info: info.clone(),
       status: Accessibility::New,
-      salable: salable.clone(),
+      salable: *salable,
       country: country.clone(),
       region: Region::of_country(country.clone()),
       sub_region: SubRegion::of_country(country.clone()),
@@ -117,7 +118,7 @@ impl<T: Config> Pallet<T> {
     Registries::<T>::try_mutate(registry_id, |maybe_registry| {
       let mut registry = maybe_registry.take().ok_or(Error::<T>::RegistryNotExisted)?;
 
-      registry.salable = salable.clone();
+      registry.salable = *salable;
 
       *maybe_registry = Some(registry);
 
@@ -127,13 +128,13 @@ impl<T: Config> Pallet<T> {
     Ok(())
   }
 
-  pub fn do_remove_registry(registry_id: &RegistryId, actor_id: &T::AccountId) -> Result<(), Error<T>> {
+  pub fn do_delete_registry(registry_id: &RegistryId, author_id: &T::AccountId) -> Result<(), Error<T>> {
     let maybe_registry = Registries::<T>::get(registry_id);
     ensure!(maybe_registry.is_some(), Error::<T>::RegistryNotExisted);
 
     let registry = maybe_registry.unwrap();
     ensure!(
-      registry.owner_id == actor_id.clone() || registry.issuer_id == actor_id.clone(),
+      registry.owner_id == author_id.clone() || registry.issuer_id == author_id.clone(),
       Error::<T>::NonAuthorized
     );
     ensure!(!registry.salable, Error::<T>::RegistrySalable);
@@ -148,6 +149,10 @@ impl<T: Config> Pallet<T> {
       Ok(())
     })?;
 
+    let mut pending_deleted_registries = PendingDeletionRegistries::<T>::get();
+    pending_deleted_registries.push(*registry_id);
+    PendingDeletionRegistries::<T>::put(pending_deleted_registries);
+
     // TODO: use offchain worker to remove accesses and chunks
 
     Ok(())
@@ -157,13 +162,15 @@ impl<T: Config> Pallet<T> {
     Chunks::<T>::try_mutate(chunk_id, |maybe_chunk| {
       let mut chunk = maybe_chunk.take().ok_or(Error::<T>::ChunkNotExisted)?;
 
-      chunk.last_block = new_block.clone();
+      chunk.last_block = *new_block;
       chunk.status = accessibility.clone();
 
       *maybe_chunk = Some(chunk);
 
       Ok(())
     })
+
+    // TODO: if all chunks are healthy change registry status from new to healthy
   }
 
   pub fn update_chunk_block(chunk_id: &ChunkId) -> Result<T::BlockNumber, Error<T>> {
@@ -186,8 +193,8 @@ impl<T: Config> Pallet<T> {
         let mut current_chunk_block = maybe_current_chunk_block.take().ok_or(Error::<T>::ChunkBlockNotExisted)?;
 
         let index = current_chunk_block.iter().position(|x| x == chunk_id);
-        if index.is_some() {
-          current_chunk_block.remove(index.unwrap());
+        if let Some(index) = index {
+          current_chunk_block.remove(index);
         }
 
         *maybe_current_chunk_block = Some(current_chunk_block);
@@ -198,13 +205,13 @@ impl<T: Config> Pallet<T> {
 
     if maybe_next_chunk_block.is_none() {
       let mut new_block = Vec::<ChunkId>::new();
-      new_block.push(chunk_id.clone());
+      new_block.push(*chunk_id);
       ChunkBlock::<T>::insert(next_chunk_block_number, new_block);
     } else {
       ChunkBlock::<T>::mutate(next_chunk_block_number, |maybe_next_chunk_block| {
         let mut next_chunk_block = maybe_next_chunk_block.take().ok_or(Error::<T>::ChunkBlockNotExisted)?;
 
-        next_chunk_block.push(chunk_id.clone());
+        next_chunk_block.push(*chunk_id);
 
         *maybe_next_chunk_block = Some(next_chunk_block);
 
@@ -216,11 +223,11 @@ impl<T: Config> Pallet<T> {
   }
 
   pub fn get_nearest_chunk_block(block_number: &T::BlockNumber) -> T::BlockNumber {
-    let curent_block_number: u32 = block_number.clone().try_into().unwrap_or(0);
+    let curent_block_number: u32 = (*block_number).try_into().unwrap_or(0);
     let mut offset = 0u32;
 
     if CHUNK_BLOCK_HEIGHT != 0 {
-      let remainder = curent_block_number.clone() % CHUNK_BLOCK_HEIGHT;
+      let remainder = curent_block_number % CHUNK_BLOCK_HEIGHT;
 
       if remainder != 0 {
         offset = CHUNK_BLOCK_HEIGHT - remainder;
@@ -228,6 +235,24 @@ impl<T: Config> Pallet<T> {
     }
 
     T::BlockNumber::from(curent_block_number + offset)
+  }
+
+  pub fn background_delete_registry(registry_id: &RegistryId, registry: &Registry<T::AccountId>) {
+    for chunk_hash in registry.chunk_hashes.iter() {
+      let chunk_id = ChunkId::generate(registry_id, chunk_hash);
+
+      Chunks::<T>::remove(chunk_id);
+    }
+
+    let mut removal_result = Accesses::<T>::clear_prefix(registry_id, CLEAR_PREFIX_BATCH_SIZE, None);
+    while let Some(cursor) = removal_result.maybe_cursor {
+      removal_result = Accesses::<T>::clear_prefix(registry_id, CLEAR_PREFIX_BATCH_SIZE, Some(cursor.as_slice()));
+    }
+
+    Registries::<T>::remove(registry_id);
+    PendingDeletionRegistries::<T>::mutate(|pending_deleted_registries| {
+      pending_deleted_registries.retain(|x| x != registry_id);
+    });
   }
 }
 

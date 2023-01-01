@@ -1,10 +1,4 @@
-use crate::types::ChunkHash;
 use crate::types::Registry;
-use crate::types::RegistryHash;
-use crate::types::RegistryId;
-use crate::types::RegistryInfo;
-use ap_region::Country;
-use sp_std::vec::Vec;
 
 // traits
 pub trait CustodianRules<AccountId> {
@@ -20,31 +14,9 @@ pub trait IssuerRules<AccountId> {
 
   fn on_update(new_registry: &Registry<AccountId>, author_id: &AccountId);
 
-  fn can_delete(
-    registry_id: &RegistryId,
-    owner_id: &AccountId,
-    issuer_id: &AccountId,
-    author_id: &AccountId,
-    hash: &RegistryHash,
-    info: &RegistryInfo,
-    salable: &bool,
-    country: &Country,
-    delivery_network_id: &AccountId,
-    chunk_hashes: &Vec<ChunkHash>,
-  ) -> bool;
+  fn can_delete(registry: &Registry<AccountId>, author_id: &AccountId) -> bool;
 
-  fn on_delete(
-    registry_id: &RegistryId,
-    owner_id: &AccountId,
-    issuer_id: &AccountId,
-    author_id: &AccountId,
-    hash: &RegistryHash,
-    info: &RegistryInfo,
-    salable: &bool,
-    country: &Country,
-    delivery_network_id: &AccountId,
-    chunk_hashes: &Vec<ChunkHash>,
-  );
+  fn on_delete(registry: &Registry<AccountId>, author_id: &AccountId);
 }
 
 pub trait URLTrait {
@@ -87,34 +59,12 @@ impl<AccountId> IssuerRules<AccountId> for () {
   }
 
   #[allow(unused_variables)]
-  fn can_delete(
-    registry_id: &RegistryId,
-    owner_id: &AccountId,
-    issuer_id: &AccountId,
-    author_id: &AccountId,
-    hash: &RegistryHash,
-    info: &RegistryInfo,
-    salable: &bool,
-    country: &Country,
-    delivery_network_id: &AccountId,
-    chunk_hashes: &Vec<ChunkHash>,
-  ) -> bool {
+  fn can_delete(registry: &Registry<AccountId>, author_id: &AccountId) -> bool {
     true
   }
 
   #[allow(unused_variables)]
-  fn on_delete(
-    registry_id: &RegistryId,
-    owner_id: &AccountId,
-    issuer_id: &AccountId,
-    author_id: &AccountId,
-    hash: &RegistryHash,
-    info: &RegistryInfo,
-    salable: &bool,
-    country: &Country,
-    delivery_network_id: &AccountId,
-    chunk_hashes: &Vec<ChunkHash>,
-  ) {
+  fn on_delete(registry: &Registry<AccountId>, author_id: &AccountId) {
     // do nothing
   }
 }

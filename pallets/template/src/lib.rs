@@ -141,7 +141,7 @@ pub mod pallet {
         } else {
           ValidTransaction::with_tag_prefix("ExampleOffchainWorker")
             .priority(random_value.encode()[0].into())
-            .and_provides(&payload.block_number)
+            .and_provides(payload.block_number)
             .longevity(1)
             .propagate(true)
             .build()
@@ -192,7 +192,7 @@ pub mod pallet {
       // Read a value from storage.
       match <Something<T>>::get() {
         // Return an error if the value has not been set.
-        None => return Err(Error::<T>::NoneValue.into()),
+        None => Err(Error::<T>::NoneValue.into()),
         Some(old) => {
           // Increment the value read from storage; will error in the event of overflow.
           let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
@@ -216,11 +216,11 @@ pub mod pallet {
       ensure_none(origin)?;
 
       // Update storage.
-      <Something<T>>::put(payload.number.clone());
+      <Something<T>>::put(payload.number);
 
       // Emit an event.
       Self::deposit_event(Event::SomethingStoredSigned {
-        something: payload.number.clone(),
+        something: payload.number,
         account_id: payload.account_id.clone(),
       });
       // Return a successful DispatchResultWithPostInfo

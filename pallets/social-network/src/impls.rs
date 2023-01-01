@@ -12,7 +12,7 @@ impl<T: Config> Pallet<T> {
     let index = custodians.iter().position(|x| *x == custodian_id.clone());
 
     ensure!(!Accounts::<T>::contains_key(custodian_id), Error::<T>::CustodianAlreadyRegistered);
-    ensure!(1 + custodians.len() <= MAX_CUSTODIANS, Error::<T>::TooManyCustodians);
+    ensure!(custodians.len() < MAX_CUSTODIANS, Error::<T>::TooManyCustodians);
     ensure!(index.is_none(), Error::<T>::CustodianAlreadyRegistered);
 
     custodians.push(custodian_id.clone());
@@ -157,11 +157,11 @@ impl<T: Config> Pallet<T> {
     Groups::<T>::try_mutate(group_id, |maybe_group| -> Result<(), Error<T>> {
       let mut group = maybe_group.take().ok_or(Error::<T>::GroupNotExisted)?;
 
-      let members = group.members.checked_sub(1).unwrap_or(0);
+      let members = group.members.saturating_sub(1);
       group.members = members;
 
       if [AccessControl::SuperAdmin, AccessControl::Admin].contains(&maybe_who_access.unwrap()) {
-        let admins = group.admins.checked_sub(1).unwrap_or(0);
+        let admins = group.admins.saturating_sub(1);
 
         group.admins = admins;
       }
