@@ -117,6 +117,12 @@ pub mod pallet {
     /// Event documentation should end with an array that provides descriptive names for event
     /// parameters. [something, who]
     SomethingStoredSigned { something: u32, account_id: T::AccountId },
+
+    /// New delivery network registered
+    DeliveryNetworkRegistered {
+      delivery_network_id: T::AccountId,
+      delivery_network_uri: DeliveryNetworkURI,
+    },
   }
 
   // Errors inform users that something went wrong.
@@ -196,6 +202,31 @@ pub mod pallet {
       // Emit an event.
       Self::deposit_event(Event::SomethingStored { something });
       // Return a successful DispatchResultWithPostInfo
+      Ok(())
+    }
+
+    #[pallet::call_index(1)]
+    #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+    pub fn register_delivery_network(
+      origin: OriginFor<T>,
+      delivery_network_id: AccountId,
+      delivery_network_uri: DeliveryNetworkURI,
+      country: Option<Country>,
+      region: Option<Region>,
+      sub_region: Option<SubRegion>,
+    ) {
+      let author_id = ensure_signed(origin)?;
+      let maybe_delivery_network = DeliveryNetworks::<T>::get(author_id.clone());
+
+      ensure!(maybe_delivery_network.is_some(), Error::<T>::NonAuthorized);
+
+      Self::create_delivery_network(delivery_network_id, uri, &country, &region, &sub_region)?;
+
+      Self::deposit_event(Event::DeliveryNetworkRegistered {
+        delivery_network_id,
+        delivery_network_uri,
+      });
+
       Ok(())
     }
   }

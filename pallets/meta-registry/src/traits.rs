@@ -107,3 +107,7 @@ impl<AccountId> IssuerRules<AccountId> for () {
     Ok(().into())
   }
 }
+
+pub trait URLTrait {
+  fn is_valid(&self) -> bool;
+}
