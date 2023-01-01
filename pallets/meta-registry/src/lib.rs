@@ -31,7 +31,9 @@ pub mod pallet {
   use crate::types::DeliveryNetwork;
   use crate::types::DeliveryNetworkURI;
   use crate::types::Registry;
+  use crate::types::RegistryHash;
   use crate::types::RegistryId;
+  use crate::types::RegistryInfo;
   use ap_region::Country;
   use ap_region::Region;
   use ap_region::SubRegion;
@@ -140,6 +142,9 @@ pub mod pallet {
       delivery_network_id: T::AccountId,
       delivery_network_uri: DeliveryNetworkURI,
     },
+
+    /// New registry created
+    RegistryCreated { registry_id: RegistryId, issuer_id: T::AccountId },
   }
 
   // Errors inform users that something went wrong.
@@ -227,8 +232,8 @@ pub mod pallet {
       let status = maybe_status.unwrap();
       ensure!(Self::chunks(chunk_id.clone()).is_some(), Error::<T>::ChunkNotExisted);
 
-      Self::update_chunk(&chunk_id, &block_number, &status);
-      let next_block_number = Self::move_chunk_block(&chunk_id)?;
+      Self::update_chunk(&chunk_id, &block_number, &status)?;
+      let next_block_number = Self::update_chunk_block(&chunk_id)?;
 
       Self::deposit_event(Event::ChunkInspected {
         chunk_id,
@@ -259,6 +264,54 @@ pub mod pallet {
         delivery_network_id,
         delivery_network_uri,
       });
+
+      Ok(())
+    }
+
+    #[pallet::call_index(2)]
+    #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+    pub fn create_registry(
+      origin: OriginFor<T>,
+      registry_id: RegistryId,
+      owner_id: T::AccountId,
+      issuer_id: T::AccountId,
+      hash: RegistryHash,
+      info: RegistryInfo,
+      country: Country,
+      delivery_network_id: T::AccountId,
+      chunk_hashes: Vec<ChunkHash>,
+    ) -> DispatchResult {
+      let author_id = ensure_signed(origin)?;
+
+      ensure!(
+        T::IssuerRules::can_create(
+          &registry_id,
+          &owner_id,
+          &issuer_id,
+          &author_id,
+          &hash,
+          &info,
+          &country,
+          &delivery_network_id,
+          &chunk_hashes
+        ),
+        Error::<T>::NonAuthorized
+      );
+
+      Self::add_registry(
+        &registry_id,
+        &owner_id,
+        &issuer_id,
+        &author_id,
+        &hash,
+        &info,
+        &false,
+        &country,
+        &delivery_network_id,
+        &chunk_hashes,
+      )?;
+
+      Self::deposit_event(Event::RegistryCreated { registry_id, issuer_id });
 
       Ok(())
     }

@@ -61,7 +61,7 @@ impl<T: Config> Pallet<T> {
     Ok(())
   }
 
-  pub fn create_registry(
+  pub fn add_registry(
     registry_id: &RegistryId,
     owner_id: &T::AccountId,
     issuer_id: &T::AccountId,
@@ -78,11 +78,11 @@ impl<T: Config> Pallet<T> {
       Error::<T>::DeliveryNetworkNotExisted
     );
     ensure!(!Registries::<T>::contains_key(registry_id), Error::<T>::RegistryAlreadyExisted);
+
     for chunk_hash in chunk_hashes.clone().iter() {
-      ensure!(
-        !Chunks::<T>::contains_key(ChunkId::generate(&registry_id.clone(), chunk_hash)),
-        Error::<T>::ChunkAlreadyExisted
-      );
+      let chunk_id = ChunkId::generate(&registry_id.clone(), chunk_hash);
+      ensure!(!Chunks::<T>::contains_key(chunk_id), Error::<T>::ChunkAlreadyExisted);
+      Self::update_chunk_block(&chunk_id)?;
     }
 
     let now = <frame_system::Pallet<T>>::block_number();
@@ -122,7 +122,21 @@ impl<T: Config> Pallet<T> {
     Ok(())
   }
 
-  pub fn delete_registry(registry_id: &RegistryId, actor_id: &T::AccountId) -> Result<(), Error<T>> {
+  pub fn set_salable(registry_id: &RegistryId, salable: &bool) -> Result<(), Error<T>> {
+    Registries::<T>::try_mutate(registry_id, |maybe_registry| {
+      let mut registry = maybe_registry.take().ok_or(Error::<T>::RegistryNotExisted)?;
+
+      registry.salable = salable.clone();
+
+      *maybe_registry = Some(registry);
+
+      Ok(())
+    })?;
+
+    Ok(())
+  }
+
+  pub fn remove_registry(registry_id: &RegistryId, actor_id: &T::AccountId) -> Result<(), Error<T>> {
     let maybe_registry = Registries::<T>::get(registry_id);
     ensure!(maybe_registry.is_some(), Error::<T>::RegistryNotExisted);
 
@@ -161,7 +175,7 @@ impl<T: Config> Pallet<T> {
     })
   }
 
-  pub fn move_chunk_block(chunk_id: &ChunkId) -> Result<T::BlockNumber, Error<T>> {
+  pub fn update_chunk_block(chunk_id: &ChunkId) -> Result<T::BlockNumber, Error<T>> {
     let current_block_number = <frame_system::Pallet<T>>::block_number();
     let current_chunk_block_number = CurrentChunkBlockNumber::<T>::get();
     let next_chunk_block_number = Self::get_nearest_chunk_block(&current_block_number);
@@ -180,8 +194,10 @@ impl<T: Config> Pallet<T> {
       ChunkBlock::<T>::try_mutate(current_chunk_block_number, |maybe_current_chunk_block| {
         let mut current_chunk_block = maybe_current_chunk_block.take().ok_or(Error::<T>::ChunkBlockNotExisted)?;
 
-        let index = current_chunk_block.iter().position(|x| x == chunk_id).unwrap();
-        current_chunk_block.remove(index);
+        let index = current_chunk_block.iter().position(|x| x == chunk_id);
+        if index.is_some() {
+          current_chunk_block.remove(index.unwrap());
+        }
 
         *maybe_current_chunk_block = Some(current_chunk_block);
 
