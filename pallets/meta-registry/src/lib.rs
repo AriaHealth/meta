@@ -158,6 +158,7 @@ pub mod pallet {
     DeliveryNetworkAlreadyExisted,
     DeliveryNetworkNotExisted,
     NoneValue,
+    NoChanges,
     Overflow,
     RegistryAlreadyExisted,
     RegistryNotExisted,
@@ -286,22 +287,9 @@ pub mod pallet {
     ) -> DispatchResult {
       let author_id = ensure_signed(origin)?;
 
-      ensure!(
-        T::IssuerRules::can_create(
-          &registry_id,
-          &owner_id,
-          &issuer_id,
-          &author_id,
-          &hash,
-          &info,
-          &country,
-          &delivery_network_id,
-          &chunk_hashes
-        ),
-        Error::<T>::NonAuthorized
-      );
+      ensure!(T::IssuerRules::can_create(&owner_id, &issuer_id, &author_id,), Error::<T>::NonAuthorized);
 
-      Self::do_create_registry(
+      let registry = Self::do_create_registry(
         &registry_id,
         &owner_id,
         &issuer_id,
@@ -314,17 +302,7 @@ pub mod pallet {
         &chunk_hashes,
       )?;
 
-      T::IssuerRules::on_create(
-        &registry_id,
-        &owner_id,
-        &issuer_id,
-        &author_id,
-        &hash,
-        &info,
-        &country,
-        &delivery_network_id,
-        &chunk_hashes,
-      );
+      T::IssuerRules::on_create(&registry);
       Self::deposit_event(Event::RegistryCreated { registry_id, issuer_id });
 
       Ok(())
@@ -338,25 +316,20 @@ pub mod pallet {
       let maybe_registry = Registries::<T>::get(registry_id.clone());
       ensure!(maybe_registry.is_some(), Error::<T>::RegistryNotExisted);
 
-      let registry = maybe_registry.unwrap();
+      let old_registry = maybe_registry.unwrap();
+
+      let mut new_registry = old_registry.clone();
+      new_registry.salable = salable.clone();
+
+      ensure!(old_registry.salable != new_registry.salable, Error::<T>::NoChanges);
       ensure!(
-        T::IssuerRules::can_update(
-          &registry_id,
-          &registry.owner_id,
-          &registry.issuer_id,
-          &author_id,
-          &registry.hash,
-          &registry.info,
-          &registry.salable,
-          &registry.country,
-          &registry.delivery_network_id,
-          &registry.chunk_hashes
-        ),
+        T::IssuerRules::can_update(&old_registry, &new_registry, &author_id),
         Error::<T>::NonAuthorized
       );
 
       Self::do_set_salable(&registry_id, &salable)?;
 
+      T::IssuerRules::on_update(&new_registry, &author_id);
       Self::deposit_event(Event::RegistryUpdated { registry_id, author_id });
 
       Ok(())

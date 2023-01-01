@@ -1,20 +1,13 @@
 use super::pallet::*;
-
 use ap_region::Country;
 use ap_region::CountryTrait;
 use ap_region::Region;
 use ap_region::SubRegion;
-use codec::Decode;
-use codec::Encode;
-use codec::MaxEncodedLen;
 use frame_support::ensure;
 use frame_system::offchain::SignedPayload;
 use frame_system::offchain::SigningTypes;
 use sp_runtime::traits::BlockNumberProvider;
-use sp_runtime::traits::CheckedDiv;
-use sp_runtime::Saturating;
 use sp_std::vec::Vec;
-
 use crate::constants::CHUNK_BLOCK_HEIGHT;
 use crate::traits::CombinedKey;
 use crate::types::AccessType;
@@ -72,7 +65,7 @@ impl<T: Config> Pallet<T> {
     country: &Country,
     delivery_network_id: &T::AccountId,
     chunk_hashes: &Vec<ChunkHash>,
-  ) -> Result<(), Error<T>> {
+  ) -> Result<Registry<T::AccountId>, Error<T>> {
     ensure!(
       DeliveryNetworks::<T>::contains_key(delivery_network_id),
       Error::<T>::DeliveryNetworkNotExisted
@@ -100,26 +93,24 @@ impl<T: Config> Pallet<T> {
     Accesses::<T>::insert(registry_id.clone(), issuer_id.clone(), AccessType::Issuer);
     Accesses::<T>::insert(registry_id.clone(), owner_id.clone(), AccessType::Owner);
 
-    Registries::<T>::insert(
-      registry_id,
-      Registry {
-        delivery_network_id: delivery_network_id.clone(),
-        owner_id: owner_id.clone(),
-        issuer_id: issuer_id.clone(),
-        author_id: author_id.clone(),
-        hash: hash.clone(),
-        info: info.clone(),
-        status: Accessibility::New,
-        salable: salable.clone(),
-        country: country.clone(),
-        region: Region::of_country(country.clone()),
-        sub_region: SubRegion::of_country(country.clone()),
-        accessors: 2,
-        chunk_hashes: chunk_hashes.clone(),
-      },
-    );
+    let registry = Registry {
+      delivery_network_id: delivery_network_id.clone(),
+      owner_id: owner_id.clone(),
+      issuer_id: issuer_id.clone(),
+      author_id: author_id.clone(),
+      hash: hash.clone(),
+      info: info.clone(),
+      status: Accessibility::New,
+      salable: salable.clone(),
+      country: country.clone(),
+      region: Region::of_country(country.clone()),
+      sub_region: SubRegion::of_country(country.clone()),
+      accessors: 2,
+      chunk_hashes: chunk_hashes.clone(),
+    };
+    Registries::<T>::insert(registry_id, registry.clone());
 
-    Ok(())
+    Ok(registry)
   }
 
   pub fn do_set_salable(registry_id: &RegistryId, salable: &bool) -> Result<(), Error<T>> {
