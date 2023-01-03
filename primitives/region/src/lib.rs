@@ -1,9 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::Decode;
+use codec::Encode;
+use codec::MaxEncodedLen;
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
-use sp_std::cmp::{Eq, PartialEq};
+use sp_std::cmp::Eq;
+use sp_std::cmp::PartialEq;
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[repr(u16)]

@@ -1,7 +1,7 @@
 use super::pallet::*;
 use crate::constants::CHUNK_BLOCK_HEIGHT;
 use crate::constants::CLEAR_PREFIX_BATCH_SIZE;
-use crate::traits::CombinedKey;
+use crate::traits::CombinedIdentifier;
 use crate::types::AccessType;
 use crate::types::Accessibility;
 use crate::types::Chunk;
@@ -74,7 +74,7 @@ impl<T: Config> Pallet<T> {
     ensure!(!Registries::<T>::contains_key(registry_id), Error::<T>::RegistryAlreadyExisted);
 
     for chunk_hash in chunk_hashes.clone().iter() {
-      let chunk_id = ChunkId::generate(&registry_id.clone(), chunk_hash);
+      let chunk_id = ChunkId::compose(&registry_id.clone(), chunk_hash);
       ensure!(!Chunks::<T>::contains_key(chunk_id), Error::<T>::ChunkAlreadyExisted);
       Self::update_chunk_block(&chunk_id)?;
     }
@@ -83,7 +83,7 @@ impl<T: Config> Pallet<T> {
 
     for chunk_hash in chunk_hashes.clone().iter() {
       Chunks::<T>::insert(
-        ChunkId::generate(&registry_id.clone(), chunk_hash),
+        ChunkId::compose(&registry_id.clone(), chunk_hash),
         Chunk {
           last_block: now,
           status: Accessibility::New,
@@ -106,7 +106,7 @@ impl<T: Config> Pallet<T> {
       country: country.clone(),
       region: Region::of_country(country.clone()),
       sub_region: SubRegion::of_country(country.clone()),
-      accessors: 2,
+      accessor_count: 2,
       chunk_hashes: chunk_hashes.clone(),
     };
     Registries::<T>::insert(registry_id, registry.clone());
@@ -239,7 +239,7 @@ impl<T: Config> Pallet<T> {
 
   pub fn background_delete_registry(registry_id: &RegistryId, registry: &Registry<T::AccountId>) {
     for chunk_hash in registry.chunk_hashes.iter() {
-      let chunk_id = ChunkId::generate(registry_id, chunk_hash);
+      let chunk_id = ChunkId::compose(registry_id, chunk_hash);
 
       Chunks::<T>::remove(chunk_id);
     }
@@ -270,8 +270,8 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber, T:
   }
 }
 
-impl CombinedKey<RegistryId, ChunkHash, ChunkId> for ChunkId {
-  fn generate(k1: &RegistryId, k2: &ChunkHash) -> ChunkId {
+impl CombinedIdentifier<RegistryId, ChunkHash, ChunkId> for ChunkId {
+  fn compose(k1: &RegistryId, k2: &ChunkHash) -> ChunkId {
     let mut arr: ChunkId = [0u8; 44];
 
     let mut i = 0usize;

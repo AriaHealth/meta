@@ -1,11 +1,17 @@
-use ap_region::{Country, Region, SubRegion};
-use codec::{Decode, Encode, MaxEncodedLen};
+use ap_region::Country;
+use ap_region::Region;
+use ap_region::SubRegion;
+use codec::Decode;
+use codec::Encode;
+use codec::MaxEncodedLen;
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
-use sp_std::cmp::{Eq, PartialEq};
+use sp_std::cmp::Eq;
+use sp_std::cmp::PartialEq;
 use sp_std::vec::Vec;
 
-use crate::constants::{DELIVERY_NETWORK_MAX_URI_LEN, REGISTRY_INFO_MAX_LEN};
+use crate::constants::DELIVERY_NETWORK_MAX_URI_LEN;
+use crate::constants::REGISTRY_INFO_MAX_LEN;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, scale_info::TypeInfo)]
 pub struct Payload<Public, BlockNumber, AcountId> {
@@ -61,7 +67,7 @@ pub struct Registry<AccountId> {
   pub country: Country,
   pub region: Region,
   pub sub_region: SubRegion,
-  pub accessors: u32,
+  pub accessor_count: u32,
   pub chunk_hashes: Vec<ChunkHash>,
 }
 

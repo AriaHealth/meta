@@ -1,73 +1,86 @@
 use super::pallet::*;
-use crate::{
-  constants::MAX_CUSTODIANS,
-  types::{AccessControl, AccountStatus, Group, GroupId, GroupInfo, Relation},
-};
-use ap_region::{Country, Region, SubRegion};
+use crate::constants::MAX_CUSTODIANS;
+use crate::types::AccountDetail;
+use crate::types::AccountStatus;
+use crate::types::Group;
+use crate::types::GroupId;
+use crate::types::GroupInfo;
+use crate::types::Permission;
+use crate::types::Relation;
+use ap_region::Country;
+use ap_region::Region;
+use ap_region::SubRegion;
 use frame_support::ensure;
 
 impl<T: Config> Pallet<T> {
-  pub fn add_custodian(custodian_id: &T::AccountId) -> Result<(), Error<T>> {
+  pub fn do_add_custodian(issuer_id: &T::AccountId, custodian_id: &T::AccountId) -> Result<(), Error<T>> {
     let mut custodians = Custodians::<T>::get();
-    let index = custodians.iter().position(|x| *x == custodian_id.clone());
+    let issuer_index = custodians.iter().position(|x| *x == issuer_id.clone());
+    let custodian_index = custodians.iter().position(|x| *x == custodian_id.clone());
 
-    ensure!(!Accounts::<T>::contains_key(custodian_id), Error::<T>::CustodianAlreadyRegistered);
     ensure!(custodians.len() < MAX_CUSTODIANS, Error::<T>::TooManyCustodians);
-    ensure!(index.is_none(), Error::<T>::CustodianAlreadyRegistered);
+    ensure!(custodian_index.is_none(), Error::<T>::CustodianAlreadyRegistered);
+    ensure!(issuer_index.is_some(), Error::<T>::Unauthorized);
 
     custodians.push(custodian_id.clone());
     Custodians::<T>::put(custodians);
 
+    if !Accounts::<T>::contains_key(custodian_id) {
+      Accounts::<T>::insert(
+        custodian_id.clone(),
+        AccountDetail::<T::AccountId> {
+          issuer: issuer_id.clone(),
+          freezer: Default::default(),
+          status: Default::default(),
+          info: Default::default(),
+        },
+      );
+    }
+
     Ok(())
   }
 
-  pub fn remove_custodian(custodian_id: &T::AccountId) -> Result<(), Error<T>> {
+  pub fn do_remove_custodian(issuer_id: &T::AccountId, custodian_id: &T::AccountId) -> Result<(), Error<T>> {
     let mut custodians = Custodians::<T>::get();
-    let index = custodians.iter().position(|x| *x == custodian_id.clone());
+    let issuer_index = custodians.iter().position(|x| *x == issuer_id.clone());
+    let custodian_index = custodians.iter().position(|x| *x == custodian_id.clone());
 
-    ensure!(Accounts::<T>::contains_key(custodian_id), Error::<T>::CustodianNotRegistered);
-    ensure!(custodians.len().saturating_sub(1) >= 1, Error::<T>::TooFewCustodians);
-    ensure!(index.is_some(), Error::<T>::CustodianNotRegistered);
+    ensure!(custodians.len() > 2, Error::<T>::TooFewCustodians);
+    ensure!(custodian_index.is_some(), Error::<T>::CustodianNotRegistered);
+    ensure!(issuer_index.is_some(), Error::<T>::Unauthorized);
+    ensure!(issuer_id.clone() != custodian_id.clone(), Error::<T>::SelfOperationNotAllowed);
 
-    custodians.remove(index.unwrap());
+    custodians.remove(custodian_index.unwrap());
     Custodians::<T>::put(custodians);
-
-    Ok(())
-  }
-
-  pub fn connect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
-    let maybe_to = Accounts::<T>::get(to_id);
-
-    ensure!(maybe_to.is_some(), Error::<T>::AccountNotExisted);
-    ensure!(maybe_to.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
-    ensure!(!Connections::<T>::contains_key(from_id, to_id), Error::<T>::AlreadyConnecting);
-
-    Connections::<T>::insert(from_id, to_id, Relation::Pending);
 
     Ok(())
   }
 
   pub fn do_connect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
-    let maybe_connection = Connections::<T>::get(from_id, to_id);
+    let maybe_to = Accounts::<T>::get(to_id);
 
-    ensure!(maybe_connection.is_some(), Error::<T>::NeverConnecting);
-    ensure!(maybe_connection.unwrap() == Relation::Pending, Error::<T>::OnlyPendingAllowed);
+    ensure!(maybe_to.is_some(), Error::<T>::AccountNotExisted);
+    ensure!(maybe_to.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
 
-    Connections::<T>::remove(from_id, to_id);
-    Connections::<T>::insert(from_id, to_id, Relation::Connected);
-
-    Ok(())
-  }
-
-  pub fn disconnect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
-    ensure!(Connections::<T>::contains_key(from_id, to_id), Error::<T>::NeverConnecting);
-
-    Connections::<T>::remove(from_id, to_id);
+    let (k1, k2) = Self::sort_account_ids(from_id, to_id);
+    if !Connections::<T>::contains_key(k1.clone(), k2.clone()) {
+      Connections::<T>::insert(k1, k2, Relation::Connected);
+    }
 
     Ok(())
   }
 
-  pub fn create_group(
+  pub fn do_disconnect(from_id: &T::AccountId, to_id: &T::AccountId) -> Result<(), Error<T>> {
+    let (k1, k2) = Self::sort_account_ids(from_id, to_id);
+    if Connections::<T>::contains_key(k1.clone(), k2.clone()) {
+      Connections::<T>::remove(k1, k2);
+    }
+
+    Ok(())
+  }
+
+  pub fn do_create_group(
+    custodian_id: &T::AccountId,
     admin_id: &T::AccountId,
     group_id: &GroupId,
     group_info: &GroupInfo,
@@ -75,55 +88,68 @@ impl<T: Config> Pallet<T> {
     region: &Region,
     sub_region: &SubRegion,
   ) -> Result<(), Error<T>> {
-    let maybe_admin = Accounts::<T>::get(admin_id);
-
+    ensure!(Self::custodians().contains(custodian_id), Error::<T>::CustodianNotRegistered);
     ensure!(!Groups::<T>::contains_key(group_id), Error::<T>::GroupAlreadyExisted);
-    ensure!(maybe_admin.is_some(), Error::<T>::AccountNotExisted);
-    ensure!(maybe_admin.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
 
     Groups::<T>::insert(
       group_id,
       Group {
-        owner: admin_id.clone(),
+        admin_id: admin_id.clone(),
+        issuer_id: custodian_id.clone(),
         info: group_info.clone(),
         country: country.clone(),
         region: region.clone(),
         sub_region: sub_region.clone(),
-        admins: 1,
-        members: 1,
+        admin_count: 1,
+        member_count: 1,
       },
     );
-    AccessControls::<T>::insert(group_id, admin_id, AccessControl::SuperAdmin);
+    GroupPermissions::<T>::insert(group_id, admin_id, Permission::SuperAdmin);
+
+    if !Accounts::<T>::contains_key(admin_id) {
+      Accounts::<T>::insert(
+        admin_id.clone(),
+        AccountDetail::<T::AccountId> {
+          issuer: custodian_id.clone(),
+          freezer: Default::default(),
+          status: AccountStatus::Live,
+          info: Default::default(),
+        },
+      );
+    }
+
+    let (k1, k2) = Self::sort_account_ids(custodian_id, admin_id);
+    if !Connections::<T>::contains_key(k1.clone(), k2.clone()) {
+      Connections::<T>::insert(k1, k2, Relation::Connected);
+    }
 
     Ok(())
   }
 
-  pub fn join(invoker_id: &T::AccountId, who_id: &T::AccountId, group_id: &GroupId, access_control: &AccessControl) -> Result<(), Error<T>> {
-    let maybe_who = Accounts::<T>::get(who_id);
-    let maybe_invoker = Accounts::<T>::get(invoker_id);
-    let maybe_invoker_access = AccessControls::<T>::get(group_id, invoker_id);
+  pub fn do_join_group(issuer_id: &T::AccountId, joiner_id: &T::AccountId, group_id: &GroupId, permission: &Permission) -> Result<(), Error<T>> {
+    let maybe_issuer = Accounts::<T>::get(issuer_id);
+    let maybe_issuer_permission = GroupPermissions::<T>::get(group_id, issuer_id);
 
     ensure!(Groups::<T>::contains_key(group_id), Error::<T>::GroupNotExisted);
-    ensure!(maybe_who.is_some(), Error::<T>::AccountNotExisted);
-    ensure!(maybe_who.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
-    ensure!(maybe_invoker.is_some(), Error::<T>::AccountNotExisted);
-    ensure!(maybe_invoker.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
-    ensure!(maybe_invoker_access.is_some(), Error::<T>::NeverJoining);
+    ensure!(maybe_issuer.is_some(), Error::<T>::AccountNotExisted);
+    ensure!(maybe_issuer.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
+    ensure!(maybe_issuer_permission.is_some(), Error::<T>::NoPermission);
     ensure!(
-      [AccessControl::SuperAdmin, AccessControl::Admin].contains(&maybe_invoker_access.unwrap()),
+      [Permission::SuperAdmin, Permission::Admin].contains(&maybe_issuer_permission.unwrap()),
       Error::<T>::OnlyAdminAllowed
     );
+    ensure!(issuer_id.clone() != joiner_id.clone(), Error::<T>::SelfOperationNotAllowed);
 
     Groups::<T>::try_mutate(group_id, |maybe_group| -> Result<(), Error<T>> {
       let mut group = maybe_group.take().ok_or(Error::<T>::GroupNotExisted)?;
 
-      let members = group.members.checked_add(1).ok_or(Error::<T>::Overflow)?;
-      group.members = members;
+      let members = group.member_count.checked_add(1).ok_or(Error::<T>::ValueOverflow)?;
+      group.member_count = members;
 
-      if [AccessControl::SuperAdmin, AccessControl::Admin].contains(access_control) {
-        let admins = group.admins.checked_add(1).ok_or(Error::<T>::Overflow)?;
+      if [Permission::SuperAdmin, Permission::Admin].contains(permission) {
+        let admins = group.admin_count.checked_add(1).ok_or(Error::<T>::ValueOverflow)?;
 
-        group.admins = admins;
+        group.admin_count = admins;
       }
 
       *maybe_group = Some(group);
@@ -131,47 +157,130 @@ impl<T: Config> Pallet<T> {
       Ok(())
     })?;
 
-    AccessControls::<T>::insert(group_id, who_id, access_control);
+    GroupPermissions::<T>::insert(group_id, joiner_id, permission);
+
+    let (k1, k2) = Self::sort_account_ids(issuer_id, joiner_id);
+    if !Connections::<T>::contains_key(k1.clone(), k2.clone()) {
+      Connections::<T>::insert(k1, k2, Relation::Connected);
+    }
 
     Ok(())
   }
 
-  pub fn disjoin(invoker_id: &T::AccountId, who_id: &T::AccountId, group_id: &GroupId) -> Result<(), Error<T>> {
-    let maybe_who = Accounts::<T>::get(who_id);
-    let maybe_who_access = AccessControls::<T>::get(group_id, who_id);
-    let maybe_invoker = Accounts::<T>::get(invoker_id);
-    let maybe_invoker_access = AccessControls::<T>::get(group_id, invoker_id);
+  pub fn do_disjoin_group(issuer_id: &T::AccountId, disjoiner_id: &T::AccountId, group_id: &GroupId) -> Result<(), Error<T>> {
+    let maybe_disjoiner = Accounts::<T>::get(disjoiner_id);
+    let maybe_disjoiner_permission = GroupPermissions::<T>::get(group_id, disjoiner_id);
+    let maybe_issuer = Accounts::<T>::get(issuer_id);
+    let maybe_issuer_permission = GroupPermissions::<T>::get(group_id, issuer_id);
 
     ensure!(Groups::<T>::contains_key(group_id), Error::<T>::GroupNotExisted);
-    ensure!(AccessControls::<T>::contains_key(group_id, who_id), Error::<T>::NeverJoining);
-    ensure!(maybe_who.is_some(), Error::<T>::AccountNotExisted);
-    ensure!(maybe_who.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
-    ensure!(maybe_invoker.is_some(), Error::<T>::AccountNotExisted);
-    ensure!(maybe_invoker.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
-    ensure!(maybe_invoker_access.is_some(), Error::<T>::NeverJoining);
+    ensure!(GroupPermissions::<T>::contains_key(group_id, disjoiner_id), Error::<T>::NeverJoined);
+    ensure!(maybe_disjoiner.is_some(), Error::<T>::AccountNotExisted);
+    ensure!(maybe_issuer.is_some(), Error::<T>::AccountNotExisted);
+    ensure!(maybe_issuer.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
+    ensure!(maybe_issuer_permission.is_some(), Error::<T>::NoPermission);
     ensure!(
-      [AccessControl::SuperAdmin, AccessControl::Admin].contains(&maybe_invoker_access.unwrap()),
+      [Permission::SuperAdmin, Permission::Admin].contains(&maybe_issuer_permission.unwrap()),
       Error::<T>::OnlyAdminAllowed
     );
+    ensure!(issuer_id.clone() != disjoiner_id.clone(), Error::<T>::SelfOperationNotAllowed);
 
     Groups::<T>::try_mutate(group_id, |maybe_group| -> Result<(), Error<T>> {
       let mut group = maybe_group.take().ok_or(Error::<T>::GroupNotExisted)?;
 
-      let members = group.members.saturating_sub(1);
-      group.members = members;
+      let members = group.member_count.saturating_sub(1);
+      group.member_count = members;
 
-      if [AccessControl::SuperAdmin, AccessControl::Admin].contains(&maybe_who_access.unwrap()) {
-        let admins = group.admins.saturating_sub(1);
+      if [Permission::SuperAdmin, Permission::Admin].contains(&maybe_disjoiner_permission.unwrap()) {
+        let admins = group.admin_count.saturating_sub(1);
 
-        group.admins = admins;
+        group.admin_count = admins;
       }
 
       *maybe_group = Some(group);
 
       Ok(())
     })?;
-    AccessControls::<T>::remove(group_id, who_id);
+    GroupPermissions::<T>::remove(group_id, disjoiner_id);
 
     Ok(())
+  }
+
+  pub fn do_update_permission(
+    issuer_id: &T::AccountId,
+    member_id: &T::AccountId,
+    group_id: &GroupId,
+    permission: &Permission,
+  ) -> Result<(), Error<T>> {
+    let maybe_member = Accounts::<T>::get(member_id);
+    let maybe_member_permission = GroupPermissions::<T>::get(group_id, member_id);
+    let maybe_issuer = Accounts::<T>::get(issuer_id);
+    let maybe_issuer_permission = GroupPermissions::<T>::get(group_id, issuer_id);
+
+    ensure!(Groups::<T>::contains_key(group_id), Error::<T>::GroupNotExisted);
+    ensure!(GroupPermissions::<T>::contains_key(group_id, member_id), Error::<T>::NeverJoined);
+    ensure!(maybe_member.is_some(), Error::<T>::AccountNotExisted);
+    ensure!(maybe_issuer.is_some(), Error::<T>::AccountNotExisted);
+    ensure!(maybe_issuer.unwrap().status == AccountStatus::Live, Error::<T>::AccountNotLive);
+    ensure!(maybe_issuer_permission.is_some(), Error::<T>::NoPermission);
+    ensure!(
+      [Permission::SuperAdmin, Permission::Admin].contains(&maybe_issuer_permission.unwrap()),
+      Error::<T>::OnlyAdminAllowed
+    );
+    ensure!(issuer_id.clone() != member_id.clone(), Error::<T>::SelfOperationNotAllowed);
+
+    if *permission == Permission::SuperAdmin {
+      ensure!(
+        maybe_issuer_permission.unwrap() == Permission::SuperAdmin,
+        Error::<T>::OnlySuperAdminAllowed
+      );
+    }
+
+    let member_permission = maybe_member_permission.unwrap();
+
+    // The member is an admin, but the new permission is not admin
+    if [Permission::SuperAdmin, Permission::Admin].contains(&member_permission) && ![Permission::SuperAdmin, Permission::Admin].contains(permission)
+    {
+      Groups::<T>::try_mutate(group_id, |maybe_group| -> Result<(), Error<T>> {
+        let mut group = maybe_group.take().ok_or(Error::<T>::GroupNotExisted)?;
+
+        let new_admin_count = group.admin_count.saturating_sub(1);
+
+        group.admin_count = new_admin_count;
+
+        *maybe_group = Some(group);
+
+        Ok(())
+      })?;
+    }
+
+    // The member is not an admin, but the new permission is admin
+    if ![Permission::SuperAdmin, Permission::Admin].contains(&member_permission) && [Permission::SuperAdmin, Permission::Admin].contains(permission)
+    {
+      Groups::<T>::try_mutate(group_id, |maybe_group| -> Result<(), Error<T>> {
+        let mut group = maybe_group.take().ok_or(Error::<T>::GroupNotExisted)?;
+
+        let new_admin_count = group.admin_count.saturating_add(1);
+
+        group.admin_count = new_admin_count;
+
+        *maybe_group = Some(group);
+
+        Ok(())
+      })?;
+    }
+
+    GroupPermissions::<T>::remove(group_id, member_id);
+    GroupPermissions::<T>::insert(group_id, member_id, *permission);
+
+    Ok(())
+  }
+
+  fn sort_account_ids(k1: &T::AccountId, k2: &T::AccountId) -> (T::AccountId, T::AccountId) {
+    if *k1 < *k2 {
+      (k1.clone(), k2.clone())
+    } else {
+      (k2.clone(), k1.clone())
+    }
   }
 }

@@ -2,11 +2,9 @@ use super::pallet::*;
 
 use crate::types::Payload;
 
-
-
-use frame_system::offchain::{SignedPayload, SigningTypes};
+use frame_system::offchain::SignedPayload;
+use frame_system::offchain::SigningTypes;
 use sp_runtime::traits::BlockNumberProvider;
-
 
 impl<T: Config> BlockNumberProvider for Pallet<T> {
   type BlockNumber = T::BlockNumber;

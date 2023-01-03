@@ -1,12 +1,23 @@
-use meta_runtime::{
-  AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, MetaRegistryConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
-};
+use meta_runtime::AccountId;
+use meta_runtime::AuraConfig;
+use meta_runtime::BalancesConfig;
+use meta_runtime::GenesisConfig;
+use meta_runtime::GrandpaConfig;
+use meta_runtime::MetaRegistryConfig;
+use meta_runtime::Signature;
+use meta_runtime::SocialNetworkConfig;
+use meta_runtime::SudoConfig;
+use meta_runtime::SystemConfig;
+use meta_runtime::WASM_BINARY;
 use pallet_meta_registry::types::DeliveryNetworkURI;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Pair, Public};
+use sp_core::sr25519;
+use sp_core::Pair;
+use sp_core::Public;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::traits::IdentifyAccount;
+use sp_runtime::traits::Verify;
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -62,6 +73,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
         true,
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         "http://0.0.0.0:8888".to_string(),
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
       )
     },
     // Bootnodes
@@ -112,6 +124,7 @@ pub fn local_config() -> Result<ChainSpec, String> {
         true,
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         "http://0.0.0.0:8888".to_string(),
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
       )
     },
     // Bootnodes
@@ -137,6 +150,7 @@ fn genesis(
   _enable_println: bool,
   delivery_network_id: AccountId,
   delivery_network_uri: String,
+  main_custodian_id: AccountId,
 ) -> GenesisConfig {
   GenesisConfig {
     system: SystemConfig {
@@ -161,6 +175,9 @@ fn genesis(
     meta_registry: MetaRegistryConfig {
       delivery_network_id: Some(delivery_network_id),
       delivery_network_uri: Some(DeliveryNetworkURI::try_from(delivery_network_uri.into_bytes()).unwrap()),
+    },
+    social_network: SocialNetworkConfig {
+      main_custodian_id: Some(main_custodian_id),
     },
   }
 }

@@ -20,20 +20,18 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
   use frame_support::pallet_prelude::*;
-  use frame_system::{
-    offchain::{AppCrypto, CreateSignedTransaction},
-    pallet_prelude::*,
-  };
-  use sp_runtime::{
-    offchain::{
-      storage_lock::{BlockAndTime, StorageLock},
-      Duration,
-    },
-    transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
-  };
+  use frame_system::offchain::AppCrypto;
+  use frame_system::offchain::CreateSignedTransaction;
+  use frame_system::pallet_prelude::*;
+  use sp_runtime::offchain::storage_lock::BlockAndTime;
+  use sp_runtime::offchain::storage_lock::StorageLock;
+  use sp_runtime::offchain::Duration;
+  use sp_runtime::transaction_validity::InvalidTransaction;
+  use sp_runtime::transaction_validity::TransactionValidity;
+  use sp_runtime::transaction_validity::ValidTransaction;
   use sp_std::vec::Vec;
 
-  use crate::types::{TeeOracleURI};
+  use crate::types::TeeOracleURI;
 
   #[pallet::pallet]
   #[pallet::without_storage_info]

@@ -1,4 +1,5 @@
-use codec::{Decode, Encode};
+use codec::Decode;
+use codec::Encode;
 use frame_support::pallet_prelude::*;
 use sp_runtime::RuntimeDebug;
 

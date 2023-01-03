@@ -1,15 +1,23 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use meta_runtime::{self, opaque::Block, RuntimeApi};
+use meta_runtime::opaque::Block;
+use meta_runtime::RuntimeApi;
+use meta_runtime::{self};
 use sc_client_api::BlockBackend;
-use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
+use sc_consensus_aura::ImportQueueParams;
+use sc_consensus_aura::SlotProportion;
+use sc_consensus_aura::StartAuraParams;
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
 use sc_keystore::LocalKeystore;
-use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
-use sc_telemetry::{Telemetry, TelemetryWorker};
+use sc_service::error::Error as ServiceError;
+use sc_service::Configuration;
+use sc_service::TaskManager;
+use sc_telemetry::Telemetry;
+use sc_telemetry::TelemetryWorker;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
+use std::time::Duration;
 
 // Our native executor instance.
 pub struct ExecutorDispatch;

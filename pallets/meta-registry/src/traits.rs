@@ -19,12 +19,8 @@ pub trait IssuerRules<AccountId> {
   fn on_delete(registry: &Registry<AccountId>, author_id: &AccountId);
 }
 
-pub trait URLTrait {
-  fn is_valid(&self) -> bool;
-}
-
-pub trait CombinedKey<K1, K2, R> {
-  fn generate(k1: &K1, k2: &K2) -> R;
+pub trait CombinedIdentifier<K1, K2, R> {
+  fn compose(k1: &K1, k2: &K2) -> R;
   fn decompose(&self) -> (K1, K2);
 }
 

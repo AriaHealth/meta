@@ -7,38 +7,60 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::Encode;
-use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use pallet_grandpa::fg_primitives;
+use pallet_grandpa::AuthorityId as GrandpaId;
+use pallet_grandpa::AuthorityList as GrandpaAuthorityList;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{
-  create_runtime_str, generic, impl_opaque_keys,
-  traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, Verify},
-  transaction_validity::{TransactionSource, TransactionValidity},
-  ApplyExtrinsicResult, MultiSignature, SaturatedConversion,
-};
+use sp_core::crypto::KeyTypeId;
+use sp_core::OpaqueMetadata;
+use sp_runtime::create_runtime_str;
+use sp_runtime::generic;
+use sp_runtime::impl_opaque_keys;
+use sp_runtime::traits::AccountIdLookup;
+use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::IdentifyAccount;
+use sp_runtime::traits::NumberFor;
+use sp_runtime::traits::One;
+use sp_runtime::traits::Verify;
+use sp_runtime::transaction_validity::TransactionSource;
+use sp_runtime::transaction_validity::TransactionValidity;
+use sp_runtime::ApplyExtrinsicResult;
+use sp_runtime::MultiSignature;
+use sp_runtime::SaturatedConversion;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
-pub use frame_support::{
-  construct_runtime, parameter_types,
-  traits::{ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo},
-  weights::{
-    constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
-    IdentityFee, Weight,
-  },
-  StorageValue,
-};
+pub use frame_support::construct_runtime;
+pub use frame_support::parameter_types;
+pub use frame_support::traits::ConstU128;
+pub use frame_support::traits::ConstU32;
+pub use frame_support::traits::ConstU64;
+pub use frame_support::traits::ConstU8;
+pub use frame_support::traits::KeyOwnerProofSystem;
+pub use frame_support::traits::Randomness;
+pub use frame_support::traits::StorageInfo;
+pub use frame_support::weights::constants::BlockExecutionWeight;
+pub use frame_support::weights::constants::ExtrinsicBaseWeight;
+pub use frame_support::weights::constants::RocksDbWeight;
+pub use frame_support::weights::constants::WEIGHT_REF_TIME_PER_SECOND;
+pub use frame_support::weights::IdentityFee;
+pub use frame_support::weights::Weight;
+pub use frame_support::StorageValue;
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier};
+use pallet_transaction_payment::ConstFeeMultiplier;
+use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::Multiplier;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
+pub use sp_runtime::Perbill;
+pub use sp_runtime::Permill;
 
 pub use pallet_key_registry;
 pub use pallet_meta_registry;
@@ -358,7 +380,6 @@ construct_runtime!(
     Balances: pallet_balances,
     TransactionPayment: pallet_transaction_payment,
     Sudo: pallet_sudo,
-    // Include the custom logic from the pallet-template in the runtime.
     TemplateModule: pallet_template,
     MetaRegistry: pallet_meta_registry,
     KeyRegistry: pallet_key_registry,

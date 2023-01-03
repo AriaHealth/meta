@@ -1,12 +1,18 @@
-use crate::{
-  benchmarking::{inherent_benchmark_data, RemarkBuilder, TransferKeepAliveBuilder},
-  chain_spec,
-  cli::{Cli, Subcommand},
-  service,
-};
-use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
-use meta_runtime::{Block, EXISTENTIAL_DEPOSIT};
-use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+use crate::benchmarking::inherent_benchmark_data;
+use crate::benchmarking::RemarkBuilder;
+use crate::benchmarking::TransferKeepAliveBuilder;
+use crate::chain_spec;
+use crate::cli::Cli;
+use crate::cli::Subcommand;
+use crate::service;
+use frame_benchmarking_cli::BenchmarkCmd;
+use frame_benchmarking_cli::ExtrinsicFactory;
+use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
+use meta_runtime::Block;
+use meta_runtime::EXISTENTIAL_DEPOSIT;
+use sc_cli::ChainSpec;
+use sc_cli::RuntimeVersion;
+use sc_cli::SubstrateCli;
 use sc_service::PartialComponents;
 use sp_keyring::Sr25519Keyring;
 
