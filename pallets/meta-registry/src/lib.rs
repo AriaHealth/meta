@@ -20,7 +20,6 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-  use crate::constants::OFFCHAIN_WORKER_TASKS;
   use crate::traits::CustodianRules;
   use crate::traits::IssuerRules;
   use crate::types::AccessType;
@@ -64,6 +63,8 @@ pub mod pallet {
     type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
     type IssuerRules: IssuerRules<Self::AccountId>;
     type CustodianRules: CustodianRules<Self::AccountId>;
+    #[pallet::constant]
+    type WorkerInterval: Get<u64>;
   }
 
   #[pallet::genesis_config]
@@ -180,22 +181,24 @@ pub mod pallet {
       // Locking mechanism
       let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(b"mtrg::lock", 3, Duration::from_millis(6000));
 
+      log::info!("🤖 Meta registry is started. [blocknumber: {:?}]", block_number);
+
       if let Ok(_guard) = lock.try_lock() {
         // Unsigned transaction with unsigned payload
         let number: u64 = block_number.try_into().unwrap_or(0);
 
-        log::info!("{:?}::{:?}::starting...", crate::crypto::KEY_NAME, block_number);
-
         let mut call: Option<Call<T>> = None;
-        match number % OFFCHAIN_WORKER_TASKS {
+
+        match number % T::WorkerInterval::get() {
           0 => {
             if PendingDeletionRegistries::<T>::decode_len().unwrap_or(0) > 0 {
               let registry_id = PendingDeletionRegistries::<T>::get()[0];
               call = Some(Call::ocw_background_delete_registry { registry_id });
             }
           },
-          1 | _ => {
+          1 | 3 | 5 => {
             // TODO: fetch chunk and compare hash
+            log::info!("🤖 Meta registry is fetching chunk. [blocknumber: {:?}]]", block_number);
 
             call = Some(Call::ocw_update_chunk {
               block_number,
@@ -203,16 +206,20 @@ pub mod pallet {
               maybe_status: None,
             });
           },
+          _ => (),
         }
 
         if let Some(call) = call {
+          log::info!("🤖 Meta registry is submitting transaction. [blocknumber: {:?}]", block_number);
           SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
             .map_err(|()| "Unable to submit unsigned transaction.")
             .ok();
+        } else {
+          log::info!("🤖 Meta registry is skipped. [blocknumber: {:?}]", block_number);
         }
-
-        log::info!("{:?}::{:?}::finished...", crate::crypto::KEY_NAME, block_number);
       };
+
+      log::info!("🤖 Meta registry is finished. [blocknumber: {:?}]", block_number);
     }
   }
 
@@ -222,7 +229,7 @@ pub mod pallet {
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
       if let Call::ocw_update_chunk { block_number, .. } = call {
-        ValidTransaction::with_tag_prefix("mtrg::inspect_chunk")
+        ValidTransaction::with_tag_prefix("mtrg::ocw_update_chunk")
           .priority(3)
           .and_provides(block_number)
           .longevity(5)
