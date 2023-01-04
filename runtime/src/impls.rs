@@ -158,13 +158,13 @@ where
     let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
     let address = account;
     let (call, extra, _) = raw_payload.deconstruct();
-    Some((call, (sp_runtime::MultiAddress::Id(address), signature.into(), extra)))
+    Some((call, (sp_runtime::MultiAddress::Id(address), signature, extra)))
   }
 }
 
 impl pallet_meta_registry::Config for Runtime {
   type RuntimeEvent = RuntimeEvent;
-  type AuthorityId = pallet_meta_registry::crypto::TestAuthId;
+  type AuthorityId = pallet_meta_registry::crypto::WorkerAuthorityId;
   type IssuerRules = ();
   type CustodianRules = ();
   type WorkerInterval = ConstU64<WORKER_INTERVAL>;
@@ -172,7 +172,9 @@ impl pallet_meta_registry::Config for Runtime {
 
 impl pallet_key_registry::Config for Runtime {
   type RuntimeEvent = RuntimeEvent;
-  type AuthorityId = pallet_key_registry::crypto::TestAuthId;
+  type AuthorityId = pallet_key_registry::crypto::WorkerAuthorityId;
+  type WorkerInterval = ConstU64<WORKER_INTERVAL>;
+  type KeyRules = ();
 }
 
 impl pallet_social_network::Config for Runtime {

@@ -1,1 +1,1 @@
-pub const TEE_ORACLE_MAX_URI_LENGTH: u32 = 512;
+pub const ORACLE_MAX_URI_LENGTH: u32 = 512;

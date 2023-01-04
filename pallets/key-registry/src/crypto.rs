@@ -10,16 +10,16 @@ use sp_runtime::MultiSigner;
 
 app_crypto!(sr25519, KEY_TYPE);
 
-pub struct TestAuthId;
+pub struct WorkerAuthorityId;
 
 // implemented for runtime
-impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for TestAuthId {
+impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for WorkerAuthorityId {
   type RuntimeAppPublic = Public;
   type GenericSignature = sp_core::sr25519::Signature;
   type GenericPublic = sp_core::sr25519::Public;
 }
 
-impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature> for TestAuthId {
+impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature> for WorkerAuthorityId {
   type RuntimeAppPublic = Public;
   type GenericSignature = sp_core::sr25519::Signature;
   type GenericPublic = sp_core::sr25519::Public;

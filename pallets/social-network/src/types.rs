@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::constants::GROUP_INFO_MAX_LEN;
 use crate::constants::GROUP_OID_MAX_LEN;
 use crate::constants::USER_INFO_MAX_LEN;

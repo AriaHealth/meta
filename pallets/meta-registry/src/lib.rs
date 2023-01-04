@@ -1,8 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod crypto;
-
 pub mod constants;
+pub mod crypto;
 mod impls;
 pub mod traits;
 pub mod types;
@@ -103,7 +102,7 @@ pub mod pallet {
 
   #[pallet::storage]
   #[pallet::getter(fn delivery_networks)]
-  pub type DeliveryNetworks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, DeliveryNetwork>;
+  pub type DeliveryNetworks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, DeliveryNetwork>;
 
   #[pallet::storage]
   #[pallet::getter(fn registries)]
@@ -111,7 +110,7 @@ pub mod pallet {
 
   #[pallet::storage]
   #[pallet::getter(fn chunks)]
-  pub type Chunks<T: Config> = StorageMap<_, Blake2_128Concat, ChunkId, Chunk<T::BlockNumber>>;
+  pub type Chunks<T: Config> = StorageMap<_, Twox64Concat, ChunkId, Chunk<T::BlockNumber>>;
 
   #[pallet::storage]
   #[pallet::getter(fn chunk_block)]
@@ -197,8 +196,9 @@ pub mod pallet {
             }
           },
           1 | 3 | 5 => {
+            log::info!("🤖 Meta registry is fetching chunks. [blocknumber: {:?}]]", block_number);
+
             // TODO: fetch chunk and compare hash
-            log::info!("🤖 Meta registry is fetching chunk. [blocknumber: {:?}]]", block_number);
 
             call = Some(Call::ocw_update_chunk {
               block_number,

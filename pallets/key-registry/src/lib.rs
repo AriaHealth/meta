@@ -2,11 +2,11 @@
 
 pub use pallet::*;
 
+pub mod constants;
 pub mod crypto;
-
-mod constants;
 mod impls;
-mod types;
+pub mod traits;
+pub mod types;
 
 #[cfg(test)]
 mod mock;
@@ -19,9 +19,18 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
+  use crate::traits::KeyRules;
+  use crate::types::Key;
+  use crate::types::KeyName;
+  use crate::types::KeyType;
+  use crate::types::OracleURI;
+  use crate::types::Payload;
   use frame_support::pallet_prelude::*;
   use frame_system::offchain::AppCrypto;
   use frame_system::offchain::CreateSignedTransaction;
+  use frame_system::offchain::SendUnsignedTransaction;
+  use frame_system::offchain::SignedPayload;
+  use frame_system::offchain::Signer;
   use frame_system::pallet_prelude::*;
   use sp_runtime::offchain::storage_lock::BlockAndTime;
   use sp_runtime::offchain::storage_lock::StorageLock;
@@ -30,8 +39,6 @@ pub mod pallet {
   use sp_runtime::transaction_validity::TransactionValidity;
   use sp_runtime::transaction_validity::ValidTransaction;
   use sp_std::vec::Vec;
-
-  use crate::types::TeeOracleURI;
 
   #[pallet::pallet]
   #[pallet::without_storage_info]
@@ -43,39 +50,33 @@ pub mod pallet {
     type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+
+    #[pallet::constant]
+    type WorkerInterval: Get<u64>;
+
+    type KeyRules: KeyRules<Self::AccountId>;
   }
 
   #[pallet::storage]
-  #[pallet::getter(fn custodians)]
-  pub type TeeOracles<T: Config> = StorageValue<_, Vec<TeeOracleURI>, ValueQuery>;
+  #[pallet::getter(fn oracles)]
+  pub type Oracles<T: Config> = StorageValue<_, Vec<OracleURI>, ValueQuery>;
 
-  // The pallet's runtime storage items.
-  // https://docs.substrate.io/main-docs/build/runtime-storage/
   #[pallet::storage]
-  #[pallet::getter(fn something)]
-  // Learn more about declaring storage items:
-  // https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
-  pub type Something<T> = StorageValue<_, u32>;
+  #[pallet::getter(fn chunk_block)]
+  pub type KeyTypes<T: Config> = StorageMap<_, Twox64Concat, KeyType, KeyName>;
 
-  // Pallets use events to inform users when important changes are made.
-  // https://docs.substrate.io/main-docs/build/events-errors/
+  #[pallet::storage]
+  #[pallet::getter(fn registries)]
+  pub type Registries<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Blake2_128Concat, KeyType, Key>;
+
   #[pallet::event]
   #[pallet::generate_deposit(pub(super) fn deposit_event)]
   pub enum Event<T: Config> {
-    /// Event documentation should end with an array that provides descriptive names for event
-    /// parameters. [something, who]
-    SomethingStored { something: u32 },
-    /// Event documentation should end with an array that provides descriptive names for event
-    /// parameters. [something, who]
-    SomethingStoredSigned { something: u32, account_id: T::AccountId },
+    KeySynchronized { account_id: T::AccountId, key_type: KeyType },
   }
 
-  // Errors inform users that something went wrong.
   #[pallet::error]
   pub enum Error<T> {
-    /// Error names should be descriptive.
-    NoneValue,
-    /// Errors should have helpful documentation associated with them.
     StorageOverflow,
   }
 
@@ -85,20 +86,43 @@ pub mod pallet {
       // Locking mechanism
       let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(b"offchain-demo::lock", 3, Duration::from_millis(6000));
 
+      log::info!("🤖 Key registry is started. [blocknumber: {:?}]", block_number);
+
       if let Ok(_guard) = lock.try_lock() {
-        // Unsigned transaction with unsigned payload
-        let _number: u64 = block_number.try_into().unwrap_or(0);
+        let mut is_submitting = false;
+        let number: u64 = block_number.try_into().unwrap_or(0);
 
-        log::info!("Hello from pallet-key-registry.");
+        match number % T::WorkerInterval::get() {
+          0 => {
+            let key = Vec::new();
+            let key_type = [0u8; 2];
+            log::info!("🤖 Key registry is fetching keys. [blocknumber: {:?}]]", block_number);
 
-        // let call = Call::do_something {
-        //   block_number,
-        //   something: number.try_into().unwrap_or(0),
-        // };
+            // TODO: fetch key from oracle
 
-        // SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
-        //   .map_err(|()| "Unable to submit unsigned transaction.")
-        //   .ok();
+            log::info!("🤖 Key registry is submitting transaction. [blocknumber: {:?}]", block_number);
+            if !key.is_empty() {
+              Signer::<T, T::AuthorityId>::any_account().send_unsigned_transaction(
+                |account| Payload {
+                  block_number,
+                  public: account.public.clone(),
+                  account_id: account.id.clone(),
+                  key: key.clone(),
+                  key_type,
+                },
+                |payload, signature| Call::synchronize_key { signature, payload },
+              );
+              is_submitting = true;
+            }
+          },
+          _ => (),
+        }
+
+        if !is_submitting {
+          log::info!("🤖 Meta registry is skipped. [blocknumber: {:?}]", block_number);
+        } else {
+          log::info!("🤖 Key registry is finished. [blocknumber: {:?}]", block_number);
+        }
       };
     }
   }
@@ -108,40 +132,41 @@ pub mod pallet {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-      if let Call::do_something { block_number, something: _ } = call {
-        ValidTransaction::with_tag_prefix("ExampleOffchainWorker")
-          .priority(3)
-          .and_provides(block_number)
-          .longevity(5)
-          .propagate(true)
-          .build()
+      if let Call::synchronize_key { signature, payload } = call {
+        let signature_valid = SignedPayload::<T>::verify::<T::AuthorityId>(payload, signature.clone());
+
+        if !signature_valid {
+          InvalidTransaction::Call.into()
+        } else {
+          ValidTransaction::with_tag_prefix("kyrg::synchronize_key")
+            .priority(3)
+            .and_provides(payload.block_number)
+            .longevity(5)
+            .propagate(true)
+            .build()
+        }
       } else {
         InvalidTransaction::Call.into()
       }
     }
   }
 
-  // Dispatchable functions allows users to interact with the pallet and invoke state changes.
-  // These functions materialize as "extrinsics", which are often compared to transactions.
-  // Dispatchable functions must be annotated with a weight and must return a DispatchResult.
   #[pallet::call]
   impl<T: Config> Pallet<T> {
-    /// An example dispatchable that takes a singles value as a parameter, writes the value to
-    /// storage and emits an event. This function must be dispatched by a signed extrinsic.
     #[pallet::call_index(0)]
     #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-    pub fn do_something(origin: OriginFor<T>, _block_number: T::BlockNumber, something: u32) -> DispatchResult {
-      // Check that the extrinsic was signed and get the signer.
-      // This function will return an error if the extrinsic is not signed.
-      // https://docs.substrate.io/main-docs/build/origins/
+    pub fn synchronize_key(
+      origin: OriginFor<T>,
+      _signature: T::Signature,
+      payload: Payload<T::Public, T::BlockNumber, T::AccountId>,
+    ) -> DispatchResult {
       ensure_none(origin)?;
 
-      // Update storage.
-      <Something<T>>::put(something);
+      Self::deposit_event(Event::KeySynchronized {
+        account_id: payload.account_id.clone(),
+        key_type: payload.key_type,
+      });
 
-      // Emit an event.
-      Self::deposit_event(Event::SomethingStored { something });
-      // Return a successful DispatchResultWithPostInfo
       Ok(())
     }
   }

@@ -22,7 +22,8 @@ use frame_support::ensure;
 use frame_system::offchain::SignedPayload;
 use frame_system::offchain::SigningTypes;
 use sp_runtime::traits::BlockNumberProvider;
-use sp_std::vec::Vec;
+use sp_std::borrow::ToOwned;
+use sp_std::vec;
 
 impl<T: Config> Pallet<T> {
   pub fn do_create_delivery_network(
@@ -65,7 +66,7 @@ impl<T: Config> Pallet<T> {
     salable: &bool,
     country: &Country,
     delivery_network_id: &T::AccountId,
-    chunk_hashes: &Vec<ChunkHash>,
+    chunk_hashes: &[ChunkHash],
   ) -> Result<Registry<T::AccountId>, Error<T>> {
     ensure!(
       DeliveryNetworks::<T>::contains_key(delivery_network_id),
@@ -73,7 +74,7 @@ impl<T: Config> Pallet<T> {
     );
     ensure!(!Registries::<T>::contains_key(registry_id), Error::<T>::RegistryAlreadyExisted);
 
-    for chunk_hash in chunk_hashes.clone().iter() {
+    for chunk_hash in chunk_hashes.to_owned().iter() {
       let chunk_id = ChunkId::compose(&registry_id.clone(), chunk_hash);
       ensure!(!Chunks::<T>::contains_key(chunk_id), Error::<T>::ChunkAlreadyExisted);
       Self::update_chunk_block(&chunk_id)?;
@@ -81,7 +82,7 @@ impl<T: Config> Pallet<T> {
 
     let now = <frame_system::Pallet<T>>::block_number();
 
-    for chunk_hash in chunk_hashes.clone().iter() {
+    for chunk_hash in chunk_hashes.to_owned().iter() {
       Chunks::<T>::insert(
         ChunkId::compose(&registry_id.clone(), chunk_hash),
         Chunk {
@@ -107,7 +108,7 @@ impl<T: Config> Pallet<T> {
       region: Region::of_country(country.clone()),
       sub_region: SubRegion::of_country(country.clone()),
       accessor_count: 2,
-      chunk_hashes: chunk_hashes.clone(),
+      chunk_hashes: chunk_hashes.to_owned(),
     };
     Registries::<T>::insert(registry_id, registry.clone());
 
@@ -204,9 +205,8 @@ impl<T: Config> Pallet<T> {
     }
 
     if maybe_next_chunk_block.is_none() {
-      let mut new_block = Vec::<ChunkId>::new();
-      new_block.push(*chunk_id);
-      ChunkBlock::<T>::insert(next_chunk_block_number, new_block);
+      let new_chunk_block = vec![*chunk_id];
+      ChunkBlock::<T>::insert(next_chunk_block_number, new_chunk_block);
     } else {
       ChunkBlock::<T>::mutate(next_chunk_block_number, |maybe_next_chunk_block| {
         let mut next_chunk_block = maybe_next_chunk_block.take().ok_or(Error::<T>::ChunkBlockNotExisted)?;

@@ -1,7 +1,6 @@
 use super::pallet::*;
 
 use crate::types::Payload;
-
 use frame_system::offchain::SignedPayload;
 use frame_system::offchain::SigningTypes;
 use sp_runtime::traits::BlockNumberProvider;
