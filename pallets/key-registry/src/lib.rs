@@ -23,6 +23,7 @@ pub mod pallet {
   use crate::types::Key;
   use crate::types::KeyName;
   use crate::types::KeyType;
+  use crate::types::Oracle;
   use crate::types::OracleURI;
   use crate::types::Payload;
   use frame_support::pallet_prelude::*;
@@ -57,9 +58,45 @@ pub mod pallet {
     type KeyRules: KeyRules<Self::AccountId>;
   }
 
+  #[pallet::genesis_config]
+  pub struct GenesisConfig<T: Config> {
+    pub key_type: Option<KeyType>,
+    pub key_name: Option<KeyName>,
+    pub key_oracle_uri: Option<OracleURI>,
+    pub key_oracle_id: Option<T::AccountId>,
+  }
+
+  #[cfg(feature = "std")]
+  impl<T: Config> Default for GenesisConfig<T> {
+    fn default() -> Self {
+      Self {
+        key_type: None,
+        key_name: None,
+        key_oracle_uri: None,
+        key_oracle_id: None,
+      }
+    }
+  }
+
+  #[pallet::genesis_build]
+  impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    fn build(&self) {
+      if let (Some(key_type), Some(key_name)) = (self.key_type.clone(), self.key_name.clone()) {
+        <KeyTypes<T>>::insert(key_type, key_name);
+      }
+
+      if let (Some(key_oracle_uri), Some(key_oracle_id)) = (self.key_oracle_uri.clone(), self.key_oracle_id.clone()) {
+        <Oracles<T>>::put(vec![Oracle {
+          uri: key_oracle_uri,
+          account_id: key_oracle_id,
+        }]);
+      }
+    }
+  }
+
   #[pallet::storage]
   #[pallet::getter(fn oracles)]
-  pub type Oracles<T: Config> = StorageValue<_, Vec<OracleURI>, ValueQuery>;
+  pub type Oracles<T: Config> = StorageValue<_, Vec<Oracle<T::AccountId>>, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn chunk_block)]
@@ -119,7 +156,7 @@ pub mod pallet {
         }
 
         if !is_submitting {
-          log::info!("🤖 Meta registry is skipped. [blocknumber: {:?}]", block_number);
+          log::info!("🤖 Key registry is skipped. [blocknumber: {:?}]", block_number);
         } else {
           log::info!("🤖 Key registry is finished. [blocknumber: {:?}]", block_number);
         }

@@ -19,3 +19,9 @@ pub struct Payload<Public, BlockNumber, AccountId> {
   pub key: Key,
   pub key_type: KeyType,
 }
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct Oracle<AccountId> {
+  pub account_id: AccountId,
+  pub uri: OracleURI,
+}

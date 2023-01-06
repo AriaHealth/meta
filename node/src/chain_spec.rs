@@ -3,12 +3,16 @@ use meta_runtime::AuraConfig;
 use meta_runtime::BalancesConfig;
 use meta_runtime::GenesisConfig;
 use meta_runtime::GrandpaConfig;
+use meta_runtime::KeyRegistryConfig;
 use meta_runtime::MetaRegistryConfig;
 use meta_runtime::Signature;
 use meta_runtime::SocialNetworkConfig;
 use meta_runtime::SudoConfig;
 use meta_runtime::SystemConfig;
 use meta_runtime::WASM_BINARY;
+use pallet_key_registry::types::KeyName;
+use pallet_key_registry::types::KeyType;
+use pallet_key_registry::types::OracleURI;
 use pallet_meta_registry::types::DeliveryNetworkURI;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -74,6 +78,10 @@ pub fn development_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         "http://0.0.0.0:8888".to_string(),
         get_account_id_from_seed::<sr25519::Public>("Alice"),
+        [0_u8, 0_u8],
+        "SHIELDING".into(),
+        "http://0.0.0.0:8888".to_string(),
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
       )
     },
     // Bootnodes
@@ -125,6 +133,10 @@ pub fn local_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         "http://0.0.0.0:8888".to_string(),
         get_account_id_from_seed::<sr25519::Public>("Alice"),
+        [0_u8, 0_u8],
+        "SHIELDING".into(),
+        "http://0.0.0.0:8888".to_string(),
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
       )
     },
     // Bootnodes
@@ -151,6 +163,10 @@ fn genesis(
   delivery_network_id: AccountId,
   delivery_network_uri: String,
   main_custodian_id: AccountId,
+  key_type: KeyType,
+  key_name: KeyName,
+  key_oracle_uri: String,
+  key_oracle_id: AccountId,
 ) -> GenesisConfig {
   GenesisConfig {
     system: SystemConfig {
@@ -175,6 +191,12 @@ fn genesis(
     meta_registry: MetaRegistryConfig {
       delivery_network_id: Some(delivery_network_id),
       delivery_network_uri: Some(DeliveryNetworkURI::try_from(delivery_network_uri.into_bytes()).unwrap()),
+    },
+    key_registry: KeyRegistryConfig {
+      key_type: Some(key_type),
+      key_name: Some(key_name),
+      key_oracle_uri: Some(OracleURI::try_from(key_oracle_uri.into_bytes()).unwrap()),
+      key_oracle_id: Some(key_oracle_id),
     },
     social_network: SocialNetworkConfig {
       main_custodian_id: Some(main_custodian_id),
